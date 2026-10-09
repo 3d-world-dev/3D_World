@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3D World — Impresión 3D a pedido</title>
+  <meta name="description" content="Impresión 3D a pedido: elige un modelo del catálogo o envíanos tu propio archivo. Cotiza directo por WhatsApp.">
+  <meta name="theme-color" content="#0a0a0b">
+  <!-- Política de seguridad: solo permite scripts propios, three.js desde jsdelivr y los 2 scripts en línea de esta página (por hash).
+       Si editas esos scripts en línea, recalcula los hashes (ver README). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'sha256-tBj/dpa81I9cT6nbc7vcKz1v3J/nTrL30oOKBKoCyDo=' 'sha256-4V1UclJClx9/FV6gHP29z3mTvSralDNQnI7ho0PBBtY='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://cdn.jsdelivr.net blob: data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0a0b'/%3E%3Cpath d='M16 6 26 11 16 16 6 11Z' fill='%23e3262f'/%3E%3Cpath d='M6 15.5 16 20.5 26 15.5M6 20 16 25 26 20' fill='none' stroke='%239a9aa2' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script>try { var t = localStorage.getItem('3dw-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <div class="scroll-progress" aria-hidden="true"><i id="scroll-progress"></i></div>
+  <canvas id="grid-canvas" aria-hidden="true"></canvas>
+
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a href="#inicio" class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 6 26 11 16 16 6 11Z" fill="var(--accent)"/><path d="M6 15.5 16 20.5 26 15.5M6 20 16 25 26 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <span data-brand>3D World</span>
+      </a>
+      <nav class="nav-links" id="nav-links" aria-label="Principal">
+        <a href="#catalogo">Catálogo</a>
+        <a href="#tu-modelo">Tu modelo</a>
+        <a href="#proceso">Cómo funciona</a>
+        <a href="#materiales">Materiales</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Cambiar a modo claro">
+          <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></svg>
+        </button>
+        <a class="btn btn-wa btn-sm nav-cta" data-wa target="_blank" rel="noopener"><span class="ico" data-icon="whatsapp"></span>Escríbenos</a>
+        <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links"><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- PORTADA -->
+    <section class="hero" id="inicio">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="pulse"></span><span data-tagline>Impresión 3D a pedido</span></p>
+          <h1>Ideas que toman forma, <span class="accent">capa a capa.</span></h1>
+          <p class="lead">Elige un diseño de nuestro catálogo o envíanos tu propio modelo. Lo imprimimos en el material y el color que quieras.</p>
+          <div class="hero-actions">
+            <a href="#catalogo" class="btn btn-primary">Ver catálogo</a>
+            <a href="#tu-modelo" class="btn btn-ghost">Imprime tu modelo</a>
+          </div>
+          <ul class="hero-tags" id="hero-tags"></ul>
+        </div>
+
+        <div class="hero-stage">
+          <canvas id="hero-canvas" aria-label="Modelo 3D imprimiéndose"></canvas>
+          <div class="hud">
+            <div class="hud-top">
+              <span class="hud-label">Imprimiendo</span>
+              <button class="hud-model" id="hud-model" type="button">—</button>
+            </div>
+            <div class="hud-bar"><i id="hud-progress"></i></div>
+            <div class="hud-bottom">
+              <span>Capa <strong id="hud-layer">0</strong> / <span id="hud-total">0</span></span>
+              <span id="hud-layer-height">0.2 mm</span>
+            </div>
+          </div>
+          <div class="hero-controls">
+            <div class="swatches" id="hero-colors" role="radiogroup" aria-label="Color del modelo"></div>
+            <button class="chip-btn" id="hero-replay" type="button"><span class="ico" data-icon="rotate"></span>Reimprimir</button>
+          </div>
+          <p class="drag-hint" id="drag-hint">Arrastra para girar</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>PLA</span><span>PETG</span><span>TPU</span><span>Prototipos</span><span>Regalos personalizados</span><span>Repuestos</span><span>Decoración</span><span>Figuras</span><span>Piezas a medida</span>
+        <span>PLA</span><span>PETG</span><span>TPU</span><span>Prototipos</span><span>Regalos personalizados</span><span>Repuestos</span><span>Decoración</span><span>Figuras</span><span>Piezas a medida</span>
+      </div>
+    </div>
+
+    <!-- CATÁLOGO -->
+    <section class="section" id="catalogo">
+      <div class="container">
+        <div class="section-head reveal">
+          <p class="eyebrow">Catálogo</p>
+          <h2>Modelos listos para imprimir</h2>
+          <p>Gíralos, cámbiales el color y, si alguno te gusta, escríbenos directo por WhatsApp.</p>
+        </div>
+        <div class="catalog-tools">
+          <div class="chips" id="chips" role="group" aria-label="Filtrar por categoría"></div>
+          <label class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="search" type="search" placeholder="Buscar modelo…" aria-label="Buscar modelo">
+          </label>
+        </div>
+        <div class="grid" id="grid"></div>
+        <p class="empty" id="empty" hidden>No encontramos modelos con ese filtro.</p>
+        <p class="no-webgl" id="no-webgl" hidden>Tu navegador no puede mostrar modelos 3D, pero igual puedes ver el catálogo y escribirnos.</p>
+      </div>
+    </section>
+
+    <!-- TU MODELO -->
+    <section class="section section-alt" id="tu-modelo">
+      <div class="container upload-wrap">
+        <div class="upload-copy reveal">
+          <p class="eyebrow">Tu modelo</p>
+          <h2>¿Ya tienes tu diseño? Lo imprimimos.</h2>
+          <p>Arrastra tu archivo para verlo en 3D sobre nuestra cama de impresión, ajustar el tamaño y conocer sus medidas. Después nos lo envías por WhatsApp.</p>
+          <ol class="mini-steps">
+            <li><strong>Sube tu archivo</strong><span>STL, OBJ o GLB. Se procesa en tu navegador; no se sube a ningún servidor.</span></li>
+            <li><strong>Ajusta escala, material y color</strong><span>Te avisamos si no cabe en la impresora.</span></li>
+            <li><strong>Envíanos el pedido</strong><span>Abrimos WhatsApp con los datos listos; solo adjunta el archivo en el chat.</span></li>
+          </ol>
+          <a class="text-link" id="idea-link" target="_blank" rel="noopener">¿Solo tienes una idea o una foto? Cuéntanos →</a>
+        </div>
+
+        <div class="upload-card reveal">
+          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Subir archivo 3D">
+            <input type="file" id="file-input" accept=".stl,.obj,.glb" hidden>
+            <canvas id="upload-canvas"></canvas>
+            <div class="dz-empty" id="dz-empty">
+              <span class="dz-icon" data-icon="upload"></span>
+              <strong>Suelta tu archivo aquí</strong>
+              <span>o haz clic para elegirlo · STL, OBJ, GLB</span>
+            </div>
+            <div class="dz-loading" id="dz-loading" hidden><span class="loader"></span>Leyendo modelo…</div>
+          </div>
+          <p class="form-error" id="upload-error" hidden></p>
+
+          <div class="upload-panel" id="upload-panel" hidden>
+            <div class="file-row">
+              <span class="file-name" id="file-name"></span>
+              <button class="chip-btn" id="file-change" type="button">Cambiar archivo</button>
+            </div>
+            <dl class="specs">
+              <div><dt>Medidas</dt><dd id="spec-size">—</dd></div>
+              <div><dt>Volumen</dt><dd id="spec-volume">—</dd></div>
+              <div><dt>Filamento aprox.</dt><dd id="spec-weight">—</dd></div>
+              <div id="spec-price-row" hidden><dt>Precio estimado</dt><dd id="spec-price">—</dd></div>
+            </dl>
+            <p class="warn" id="fit-warning" hidden></p>
+            <label class="field">
+              <span class="field-label">Escala <output id="scale-out">100%</output></span>
+              <input type="range" id="scale" min="10" max="300" step="5" value="100">
+            </label>
+            <div class="field-row">
+              <label class="field"><span class="field-label">Material</span><select id="upload-material"></select></label>
+              <label class="field"><span class="field-label">Cantidad</span><input type="number" id="qty" min="1" max="999" value="1"></label>
+            </div>
+            <div class="field">
+              <span class="field-label">Color: <strong id="upload-color-name"></strong></span>
+              <div class="swatches" id="upload-colors" role="radiogroup" aria-label="Color"></div>
+            </div>
+            <a class="btn btn-wa btn-block" id="upload-wa" target="_blank" rel="noopener"><span class="ico" data-icon="whatsapp"></span>Enviar pedido por WhatsApp</a>
+            <p class="note">WhatsApp no permite adjuntar archivos desde un enlace: cuando se abra el chat, adjunta tu archivo ahí.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROCESO -->
+    <section class="section" id="proceso">
+      <div class="container">
+        <div class="section-head reveal">
+          <p class="eyebrow">Cómo funciona</p>
+          <h2>De la idea a tus manos en 4 pasos</h2>
+        </div>
+        <ol class="steps">
+          <li class="step reveal"><span class="step-n">01</span><h3>Elige o envía</h3><p>Escoge un modelo del catálogo o compártenos tu propio archivo.</p></li>
+          <li class="step reveal"><span class="step-n">02</span><h3>Cotizamos</h3><p>Te confirmamos material, color, precio y tiempo por WhatsApp.</p></li>
+          <li class="step reveal"><span class="step-n">03</span><h3>Imprimimos</h3><p>Fabricamos tu pieza capa por capa y revisamos el acabado.</p></li>
+          <li class="step reveal"><span class="step-n">04</span><h3>Recibes</h3><p>Coordinamos contigo la entrega o el retiro de tu pedido.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- MATERIALES -->
+    <section class="section section-alt" id="materiales">
+      <div class="container">
+        <div class="section-head reveal">
+          <p class="eyebrow">Materiales</p>
+          <h2>El material correcto para cada pieza</h2>
+          <p>¿No sabes cuál elegir? Cuéntanos para qué es la pieza y te recomendamos uno.</p>
+        </div>
+        <div class="materials" id="materials"></div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq">
+      <div class="container narrow">
+        <div class="section-head reveal">
+          <p class="eyebrow">Preguntas frecuentes</p>
+          <h2>Lo que más nos preguntan</h2>
+        </div>
+        <div class="faq reveal">
+          <details><summary>¿Qué archivos aceptan?</summary><p>STL, OBJ y GLB. Si solo tienes una foto, un dibujo o una idea, escríbenos y vemos juntos qué se puede hacer.</p></details>
+          <details><summary>¿Cuánto tarda un pedido?</summary><p>Depende del tamaño, del relleno y de la cantidad de piezas. Al cotizar te damos un tiempo estimado.</p></details>
+          <details><summary>¿Puedo elegir el color?</summary><p>Sí. Cada modelo muestra los colores disponibles; si buscas otro, pregúntanos.</p></details>
+          <details><summary>¿Qué tan resistentes son las piezas?</summary><p>Depende del material y del relleno. Para piezas decorativas recomendamos PLA, para piezas funcionales PETG y para piezas flexibles TPU.</p></details>
+          <details><summary>¿Cómo pago y recibo mi pedido?</summary><p>Lo coordinamos por WhatsApp cuando confirmas tu pedido.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACTO -->
+    <section class="section contact" id="contacto">
+      <div class="container">
+        <div class="contact-box reveal">
+          <div class="contact-copy">
+            <p class="eyebrow">Contáctanos</p>
+            <h2>¿Tienes algo en mente? Hablemos.</h2>
+            <p>Escríbenos y te respondemos con una cotización sin compromiso.</p>
+            <a class="btn btn-wa btn-lg" data-wa target="_blank" rel="noopener"><span class="ico" data-icon="whatsapp"></span>Abrir WhatsApp</a>
+          </div>
+          <ul class="contact-list" id="contact-list"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <svg class="brand-mark" id="secret-logo" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 6 26 11 16 16 6 11Z" fill="var(--accent)"/><path d="M6 15.5 16 20.5 26 15.5M6 20 16 25 26 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <span data-brand>3D World</span>
+      </div>
+      <nav class="footer-links" aria-label="Pie de página">
+        <a href="#catalogo">Catálogo</a><a href="#tu-modelo">Tu modelo</a><a href="#materiales">Materiales</a><a href="#contacto">Contacto</a>
+      </nav>
+      <p class="footer-copy">© <span id="year"></span> <span data-brand>3D World</span>. Hecho capa por capa.</p>
+    </div>
+  </footer>
+
+  <a class="wa-float" data-wa target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp"><span class="ico" data-icon="whatsapp"></span></a>
+
+  <!-- FICHA DEL MODELO -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="m-title">
+      <button class="icon-btn modal-close" data-close type="button" aria-label="Cerrar"><span class="ico" data-icon="close"></span></button>
+      <div class="modal-stage">
+        <canvas id="modal-canvas"></canvas>
+        <div class="stage-tools">
+          <button class="chip-btn" id="m-print" type="button"><span class="ico" data-icon="play"></span>Ver impresión</button>
+          <button class="chip-btn" id="m-wire" type="button" aria-pressed="false"><span class="ico" data-icon="cube"></span>Malla</button>
+          <button class="chip-btn" id="m-rotate" type="button" aria-pressed="true"><span class="ico" data-icon="rotate"></span>Auto-giro</button>
+        </div>
+        <p class="drag-hint">Arrastra para girar · rueda o pellizca para zoom</p>
+      </div>
+      <div class="modal-info">
+        <p class="eyebrow" id="m-cat"></p>
+        <h3 id="m-title"></h3>
+        <p class="m-desc" id="m-desc"></p>
+        <dl class="specs" id="m-specs"></dl>
+        <div class="field" id="m-material-field">
+          <span class="field-label">Material</span>
+          <div class="seg" id="m-materials" role="radiogroup" aria-label="Material"></div>
+        </div>
+        <div class="field">
+          <span class="field-label">Color: <strong id="m-color-name"></strong></span>
+          <div class="swatches" id="m-colors" role="radiogroup" aria-label="Color"></div>
+        </div>
+        <div class="m-footer">
+          <span class="m-price" id="m-price"></span>
+          <a class="btn btn-wa" id="m-wa" target="_blank" rel="noopener"><span class="ico" data-icon="whatsapp"></span>Me interesa</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</body>
+</html>
