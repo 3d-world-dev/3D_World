@@ -10,19 +10,69 @@
     "location": "",
     "hours": ""
   },
-  "printer": { "x": 220, "y": 220, "z": 250, "layerHeight": 0.2 },
-  "pricing": { "currency": "$", "perGram": null, "minimum": null, "fillFactor": 0.35 },
+  "printer": {
+    "x": 220,
+    "y": 220,
+    "z": 250,
+    "layerHeight": 0.2
+  },
+  "pricing": {
+    "currency": "$",
+    "perGram": null,
+    "minimum": null,
+    "fillFactor": 0.35
+  },
   "colors": [
-    { "id": "negro", "name": "Negro", "hex": "#1e1e22" },
-    { "id": "rojo", "name": "Rojo", "hex": "#e3262f" },
-    { "id": "gris", "name": "Gris", "hex": "#8d8f96" },
-    { "id": "blanco", "name": "Blanco", "hex": "#f1f1ee" },
-    { "id": "naranja", "name": "Naranja", "hex": "#ff7a1a" },
-    { "id": "amarillo", "name": "Amarillo", "hex": "#ffcb2e" },
-    { "id": "verde", "name": "Verde", "hex": "#2fb36b" },
-    { "id": "azul", "name": "Azul", "hex": "#2f7cf6" },
-    { "id": "morado", "name": "Morado", "hex": "#8b5cf6" },
-    { "id": "rosa", "name": "Rosa", "hex": "#ff5fa2" }
+    {
+      "id": "negro",
+      "name": "Negro",
+      "hex": "#1e1e22"
+    },
+    {
+      "id": "rojo",
+      "name": "Rojo",
+      "hex": "#e3262f"
+    },
+    {
+      "id": "gris",
+      "name": "Gris",
+      "hex": "#8d8f96"
+    },
+    {
+      "id": "blanco",
+      "name": "Blanco",
+      "hex": "#f1f1ee"
+    },
+    {
+      "id": "naranja",
+      "name": "Naranja",
+      "hex": "#ff7a1a"
+    },
+    {
+      "id": "amarillo",
+      "name": "Amarillo",
+      "hex": "#ffcb2e"
+    },
+    {
+      "id": "verde",
+      "name": "Verde",
+      "hex": "#2fb36b"
+    },
+    {
+      "id": "azul",
+      "name": "Azul",
+      "hex": "#2f7cf6"
+    },
+    {
+      "id": "morado",
+      "name": "Morado",
+      "hex": "#8b5cf6"
+    },
+    {
+      "id": "rosa",
+      "name": "Rosa",
+      "hex": "#ff5fa2"
+    }
   ],
   "materials": [
     {
@@ -30,33 +80,76 @@
       "name": "PLA",
       "density": 1.24,
       "description": "El más usado. Rígido, con muy buen detalle y gran variedad de colores. Ideal para decoración, figuras y prototipos.",
-      "stats": { "Rigidez": 4, "Impacto": 2, "Calor": 2, "Flexibilidad": 1, "Detalle": 5 }
+      "stats": {
+        "Rigidez": 4,
+        "Impacto": 2,
+        "Calor": 2,
+        "Flexibilidad": 1,
+        "Detalle": 5
+      }
     },
     {
       "id": "PETG",
       "name": "PETG",
       "density": 1.27,
       "description": "Más resistente a golpes, humedad y temperatura que el PLA. Perfecto para piezas funcionales y uso en exteriores.",
-      "stats": { "Rigidez": 3, "Impacto": 4, "Calor": 3, "Flexibilidad": 2, "Detalle": 4 }
+      "stats": {
+        "Rigidez": 3,
+        "Impacto": 4,
+        "Calor": 3,
+        "Flexibilidad": 2,
+        "Detalle": 4
+      }
     },
     {
       "id": "TPU",
       "name": "TPU",
       "density": 1.21,
       "description": "Flexible y elástico, tipo goma. Para fundas, topes, juntas y piezas que necesitan doblarse sin romperse.",
-      "stats": { "Rigidez": 1, "Impacto": 5, "Calor": 3, "Flexibilidad": 5, "Detalle": 3 }
+      "stats": {
+        "Rigidez": 1,
+        "Impacto": 5,
+        "Calor": 3,
+        "Flexibilidad": 5,
+        "Detalle": 3
+      }
     }
   ],
   "items": [
+    {
+      "id": "cuno1",
+      "name": "cuno1",
+      "category": "General",
+      "description": "",
+      "price": null,
+      "dimensions": {
+        "w": 1.1,
+        "d": 0.2,
+        "h": 0.1
+      },
+      "printTime": "",
+      "materials": [],
+      "colors": [],
+      "defaultColor": "rojo",
+      "featured": false,
+      "model": "models/cuno1-mv1nzuy1.stl"
+    },
     {
       "id": "jarron-espiral",
       "name": "Jarrón Espiral",
       "category": "Decoración",
       "description": "Paredes onduladas que giran mientras suben. Se imprime en modo espiral: una sola línea continua de filamento.",
       "price": null,
-      "dimensions": { "w": 110, "d": 110, "h": 160 },
+      "dimensions": {
+        "w": 110,
+        "d": 110,
+        "h": 160
+      },
       "printTime": "5 h",
-      "materials": ["PLA", "PETG"],
+      "materials": [
+        "PLA",
+        "PETG"
+      ],
       "colors": [],
       "defaultColor": "rojo",
       "featured": true,
@@ -68,10 +161,23 @@
       "category": "Decoración",
       "description": "Maceta low-poly de siete caras para suculentas y cactus pequeños.",
       "price": null,
-      "dimensions": { "w": 100, "d": 100, "h": 68 },
+      "dimensions": {
+        "w": 100,
+        "d": 100,
+        "h": 68
+      },
       "printTime": "4 h",
-      "materials": ["PLA", "PETG"],
-      "colors": ["blanco", "gris", "negro", "verde", "rosa"],
+      "materials": [
+        "PLA",
+        "PETG"
+      ],
+      "colors": [
+        "blanco",
+        "gris",
+        "negro",
+        "verde",
+        "rosa"
+      ],
       "defaultColor": "blanco",
       "featured": false,
       "model": "procedural:facetedPot"
@@ -82,9 +188,15 @@
       "category": "Decoración",
       "description": "Un nudo toroidal continuo, imposible de fabricar de otra forma. Pieza de escritorio que llama la atención.",
       "price": null,
-      "dimensions": { "w": 90, "d": 40, "h": 90 },
+      "dimensions": {
+        "w": 90,
+        "d": 40,
+        "h": 90
+      },
       "printTime": "6 h",
-      "materials": ["PLA"],
+      "materials": [
+        "PLA"
+      ],
       "colors": [],
       "defaultColor": "gris",
       "featured": true,
@@ -96,10 +208,23 @@
       "category": "Mecánica",
       "description": "Engranaje de 14 dientes con agujeros de aligeramiento. Sirve como pieza decorativa o como base para un mecanismo.",
       "price": null,
-      "dimensions": { "w": 80, "d": 13, "h": 80 },
+      "dimensions": {
+        "w": 80,
+        "d": 13,
+        "h": 80
+      },
       "printTime": "2 h",
-      "materials": ["PLA", "PETG"],
-      "colors": ["negro", "rojo", "gris", "blanco", "amarillo"],
+      "materials": [
+        "PLA",
+        "PETG"
+      ],
+      "colors": [
+        "negro",
+        "rojo",
+        "gris",
+        "blanco",
+        "amarillo"
+      ],
       "defaultColor": "negro",
       "featured": true,
       "model": "procedural:gear"
@@ -110,9 +235,16 @@
       "category": "Utilidad",
       "description": "Soporte inclinado para ver videos o hacer videollamadas con las manos libres. Funciona con funda.",
       "price": null,
-      "dimensions": { "w": 80, "d": 75, "h": 70 },
+      "dimensions": {
+        "w": 80,
+        "d": 75,
+        "h": 70
+      },
       "printTime": "3 h",
-      "materials": ["PLA", "PETG"],
+      "materials": [
+        "PLA",
+        "PETG"
+      ],
       "colors": [],
       "defaultColor": "negro",
       "featured": false,
@@ -124,9 +256,16 @@
       "category": "Utilidad",
       "description": "Panal de siete celdas de distintas alturas para lápices, pinceles o herramientas.",
       "price": null,
-      "dimensions": { "w": 140, "d": 130, "h": 100 },
+      "dimensions": {
+        "w": 140,
+        "d": 130,
+        "h": 100
+      },
       "printTime": "9 h",
-      "materials": ["PLA", "PETG"],
+      "materials": [
+        "PLA",
+        "PETG"
+      ],
       "colors": [],
       "defaultColor": "gris",
       "featured": true,
@@ -138,10 +277,23 @@
       "category": "Accesorios",
       "description": "Llavero con forma de corazón. Ideal para regalos, recuerdos de eventos o pedidos por cantidad.",
       "price": null,
-      "dimensions": { "w": 45, "d": 8, "h": 40 },
+      "dimensions": {
+        "w": 45,
+        "d": 8,
+        "h": 40
+      },
       "printTime": "30 min",
-      "materials": ["PLA", "TPU"],
-      "colors": ["rojo", "rosa", "morado", "blanco", "negro"],
+      "materials": [
+        "PLA",
+        "TPU"
+      ],
+      "colors": [
+        "rojo",
+        "rosa",
+        "morado",
+        "blanco",
+        "negro"
+      ],
       "defaultColor": "rojo",
       "featured": false,
       "model": "procedural:heartKeychain"
@@ -152,9 +304,15 @@
       "category": "Juegos",
       "description": "Dado de veinte caras para juegos de rol y de mesa.",
       "price": null,
-      "dimensions": { "w": 25, "d": 25, "h": 25 },
+      "dimensions": {
+        "w": 25,
+        "d": 25,
+        "h": 25
+      },
       "printTime": "40 min",
-      "materials": ["PLA"],
+      "materials": [
+        "PLA"
+      ],
       "colors": [],
       "defaultColor": "morado",
       "featured": false,
