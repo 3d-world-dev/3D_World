@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "repo": {
+    "owner": "3d-world-dev",
+    "repo": "3D_World",
+    "branch": "main"
+  },
+  "token": {
+    "alg": "AES-256-GCM",
+    "kdf": "PBKDF2-SHA256",
+    "iterations": 600000,
+    "salt": "1knggeoghkupscisa8kCZg==",
+    "iv": "TSUT/p+OBTBO8RwE",
+    "data": "PG2bXC3Uz4cT7T2f7nxDi8mO7OVG3yiYtbepV97bt/gTI6UX0PQP5u5ZBMhu+YxUWeYK73wu4KyIiu2TFw4WBnNohJATGsT9Guz0+qQxfk/vuDES08f2+tOmgTxhqbXDU3Ow+kG8QJ0HxefYww=="
+  }
+}
