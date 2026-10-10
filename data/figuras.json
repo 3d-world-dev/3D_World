@@ -1,0 +1,66 @@
+{
+  "title": "Figuras pintadas a mano",
+  "intro": "Personajes de anime y diseños originales impresos en 3D con alto detalle y pintados a mano, uno por uno. Ninguna sale igual a otra.",
+  "items": [
+    {
+      "id": "demo-guerrera",
+      "name": "Guerrera de la luna",
+      "series": "Original",
+      "description": "Figura de ejemplo. Reemplázala por una de tus figuras desde el panel (Editar → fotos).",
+      "height": 18,
+      "price": null,
+      "status": "disponible",
+      "featured": true,
+      "photos": [
+        {
+          "src": "images/figuras/demo-guerrera.svg",
+          "thumb": "images/figuras/demo-guerrera.svg",
+          "w": 800,
+          "h": 1000
+        },
+        {
+          "src": "images/figuras/demo-guerrera-2.svg",
+          "thumb": "images/figuras/demo-guerrera-2.svg",
+          "w": 800,
+          "h": 1000
+        }
+      ]
+    },
+    {
+      "id": "demo-mecha",
+      "name": "Mecha centinela",
+      "series": "Original",
+      "description": "Figura de ejemplo. Bórrala cuando subas las tuyas.",
+      "height": 22,
+      "price": null,
+      "status": "encargo",
+      "featured": true,
+      "photos": [
+        {
+          "src": "images/figuras/demo-mecha.svg",
+          "thumb": "images/figuras/demo-mecha.svg",
+          "w": 800,
+          "h": 1000
+        }
+      ]
+    },
+    {
+      "id": "demo-zorro",
+      "name": "Zorro espíritu chibi",
+      "series": "Chibi",
+      "description": "Figura de ejemplo. Bórrala cuando subas las tuyas.",
+      "height": 10,
+      "price": null,
+      "status": "vendida",
+      "featured": true,
+      "photos": [
+        {
+          "src": "images/figuras/demo-zorro.svg",
+          "thumb": "images/figuras/demo-zorro.svg",
+          "w": 800,
+          "h": 1000
+        }
+      ]
+    }
+  ]
+}

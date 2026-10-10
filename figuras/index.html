@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Figuras pintadas a mano — 3D World</title>
+  <meta name="description" content="Figuras de anime y personajes impresas en 3D y pintadas a mano, una por una. Pide la tuya por WhatsApp.">
+  <meta name="theme-color" content="#0b0816">
+  <!-- Misma política de seguridad que la página principal; esta vista no tiene scripts en línea. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com blob: data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0816'/%3E%3Cpath d='M16 6 26 11 16 16 6 11Z' fill='%23ff3d9a'/%3E%3Cpath d='M6 15.5 16 20.5 26 15.5M6 20 16 25 26 20' fill='none' stroke='%233df0ff' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Unbounded:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/figuras.css">
+  <script type="module" src="../js/figuras.js"></script>
+</head>
+<body class="page-figuras">
+  <div class="neon-sky" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a href="#inicio" class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 6 26 11 16 16 6 11Z" fill="var(--accent)"/><path d="M6 15.5 16 20.5 26 15.5M6 20 16 25 26 20" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linejoin="round"/></svg>
+        <span data-brand>3D World</span><span class="brand-sub">Figuras</span>
+      </a>
+      <nav class="nav-links" id="nav-links" aria-label="Principal">
+        <a href="#galeria">Galería</a>
+        <a href="#encargos">Encargos</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <div class="nav-actions">
+        <a class="btn btn-wa btn-sm nav-cta" data-wa target="_blank" rel="noopener"><span class="ico" data-icon="whatsapp"></span>Escríbenos</a>
+        <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links"><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- PORTADA -->
+    <section class="fx-hero" id="inicio">
+      <div class="container fx-hero-inner">
+        <div class="fx-hero-copy">
+          <p class="eyebrow"><span class="eyebrow-jp" aria-hidden="true">手塗り</span>Impresas en 3D · pintadas a mano</p>
+          <h1 class="neon-title" id="fx-title">Figuras pintadas a mano</h1>
+          <p class="lead" id="fx-intro"></p>
+          <div class="fx-hero-actions">
+            <a class="btn btn-neon btn-lg" href="#galeria">Ver galería</a>
+            <a class="btn btn-ghost btn-lg" id="order-link" target="_blank" rel="noopener"><span class="ico" data-icon="whatsapp"></span>Encarga la tuya</a>
+          </div>
+          <ul class="fx-stats" id="fx-stats"></ul>
+        </div>
+        <div class="fx-collage" id="fx-collage" aria-hidden="true"></div>
+      </div>
+      <div class="neon-floor" aria-hidden="true"></div>
+    </section>
+
+    <!-- GALERÍA -->
+    <section class="section" id="galeria">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Galería</p>
+          <h2>Cada figura es única</h2>
+          <p>Fotos reales de figuras terminadas. Toca una para ver todas sus fotos.</p>
+        </div>
+        <div class="catalog-tools">
+          <div class="chips" id="chips" role="toolbar" aria-label="Filtrar por serie"></div>
+          <label class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" id="search" placeholder="Buscar personaje o serie" aria-label="Buscar figura">
+          </label>
+        </div>
+        <div class="fx-grid" id="grid"></div>
+        <p class="empty" id="empty" hidden>No encontramos figuras con esa búsqueda.</p>
+        <p class="empty" id="soon" hidden>Muy pronto publicaremos aquí nuestras figuras. Mientras tanto, escríbenos y encarga la tuya.</p>
+      </div>
+    </section>
+
+    <!-- ENCARGOS -->
+    <section class="section fx-order" id="encargos">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Encargos</p>
+          <h2>¿Tu personaje no está? Lo hacemos.</h2>
+          <p>Trabajamos por encargo: dinos qué personaje quieres y en qué tamaño, y te pasamos el precio.</p>
+        </div>
+        <ol class="fx-steps">
+          <li><span class="fx-step-n">01</span><strong>Elige el personaje</strong><span>Mándanos una imagen de referencia y el tamaño que quieres.</span></li>
+          <li><span class="fx-step-n">02</span><strong>Lo imprimimos</strong><span>En alta resolución, capa por capa, y lo preparamos para pintar.</span></li>
+          <li><span class="fx-step-n">03</span><strong>Lo pintamos a mano</strong><span>Detalle a detalle, con barniz protector al final.</span></li>
+          <li><span class="fx-step-n">04</span><strong>Te lo entregamos</strong><span>Te mandamos fotos antes de entregarla para que la apruebes.</span></li>
+        </ol>
+        <a class="btn btn-neon btn-lg" id="order-link-2" target="_blank" rel="noopener"><span class="ico" data-icon="whatsapp"></span>Encargar por WhatsApp</a>
+      </div>
+    </section>
+
+    <!-- CONTACTO -->
+    <section class="section contact" id="contacto">
+      <div class="container">
+        <div class="contact-box">
+          <div class="contact-copy">
+            <p class="eyebrow">Contáctanos</p>
+            <h2>Hablemos de tu próxima figura</h2>
+            <p>Respondemos por WhatsApp con fotos, precios y tiempos de entrega.</p>
+            <a class="btn btn-wa btn-lg" data-wa target="_blank" rel="noopener"><span class="ico" data-icon="whatsapp"></span>Abrir WhatsApp</a>
+          </div>
+          <ul class="contact-list" id="contact-list"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <svg class="brand-mark" id="secret-logo" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 6 26 11 16 16 6 11Z" fill="var(--accent)"/><path d="M6 15.5 16 20.5 26 15.5M6 20 16 25 26 20" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linejoin="round"/></svg>
+        <span data-brand>3D World</span>
+      </div>
+      <nav class="footer-links" aria-label="Pie de página">
+        <a href="#galeria">Galería</a><a href="#encargos">Encargos</a><a href="#contacto">Contacto</a>
+      </nav>
+      <p class="footer-copy">© <span id="year"></span> <span data-brand>3D World</span>. Pintado a mano.</p>
+    </div>
+  </footer>
+
+  <a class="wa-float" data-wa target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp"><span class="ico" data-icon="whatsapp"></span></a>
+
+  <!-- VISOR DE FOTOS -->
+  <div class="lightbox" id="lightbox" hidden>
+    <div class="lb-backdrop" data-close></div>
+    <div class="lb-dialog" role="dialog" aria-modal="true" aria-labelledby="lb-title">
+      <button class="icon-btn lb-close" data-close type="button" aria-label="Cerrar"><span class="ico" data-icon="close"></span></button>
+      <div class="lb-media" id="lb-media">
+        <img id="lb-img" alt="">
+        <button class="lb-nav lb-prev" id="lb-prev" type="button" aria-label="Foto anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="lb-nav lb-next" id="lb-next" type="button" aria-label="Foto siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+        <p class="lb-counter" id="lb-counter"></p>
+      </div>
+      <div class="lb-info">
+        <p class="eyebrow" id="lb-series"></p>
+        <h3 id="lb-title"></h3>
+        <span class="fx-status" id="lb-status"></span>
+        <p class="lb-desc" id="lb-desc"></p>
+        <dl class="specs" id="lb-specs"></dl>
+        <div class="lb-thumbs" id="lb-thumbs" role="tablist" aria-label="Fotos"></div>
+        <div class="m-footer">
+          <span class="m-price" id="lb-price"></span>
+          <a class="btn btn-wa" id="lb-wa" target="_blank" rel="noopener"><span class="ico" data-icon="whatsapp"></span>Me interesa</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</body>
+</html>

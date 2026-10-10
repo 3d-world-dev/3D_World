@@ -1,0 +1,18 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 1000' width='800' height='1000'>
+<defs>
+<linearGradient id='bg' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#120a26'/><stop offset='1' stop-color='#05030c'/></linearGradient>
+<radialGradient id='glow' cx='.5' cy='.36' r='.5'><stop offset='0' stop-color='#ffb03d' stop-opacity='.55'/><stop offset='1' stop-color='#ffb03d' stop-opacity='0'/></radialGradient>
+<linearGradient id='fig' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffd27a'/><stop offset='1' stop-color='#ff3d9a'/></linearGradient>
+<filter id='blur'><feGaussianBlur stdDeviation='6'/></filter>
+</defs>
+<rect width='800' height='1000' fill='url(#bg)'/>
+<rect width='800' height='1000' fill='url(#glow)'/>
+<g stroke='#ff3d9a' stroke-opacity='.18' stroke-width='2'><line x1='0' y1='720' x2='800' y2='720'/><line x1='0' y1='724' x2='800' y2='724'/><line x1='0' y1='736' x2='800' y2='736'/><line x1='0' y1='756' x2='800' y2='756'/><line x1='0' y1='784' x2='800' y2='784'/><line x1='0' y1='820' x2='800' y2='820'/><line x1='0' y1='864' x2='800' y2='864'/><line x1='0' y1='916' x2='800' y2='916'/><line x1='0' y1='976' x2='800' y2='976'/><line x1='200' y1='720' x2='-700' y2='1000'/><line x1='240' y1='720' x2='-480' y2='1000'/><line x1='280' y1='720' x2='-260' y2='1000'/><line x1='320' y1='720' x2='-40' y2='1000'/><line x1='360' y1='720' x2='180' y2='1000'/><line x1='400' y1='720' x2='400' y2='1000'/><line x1='440' y1='720' x2='620' y2='1000'/><line x1='480' y1='720' x2='840' y2='1000'/><line x1='520' y1='720' x2='1060' y2='1000'/><line x1='560' y1='720' x2='1280' y2='1000'/><line x1='600' y1='720' x2='1500' y2='1000'/></g>
+<circle cx='400' cy='330' r='150' fill='none' stroke='#ffb03d' stroke-width='6' filter='url(#blur)'/>
+<circle cx='400' cy='330' r='150' fill='none' stroke='#ffb03d' stroke-width='3'/>
+<path d='M400 330c-90 0-150 60-150 140 0 70 50 120 150 120s150-50 150-120c0-80-60-140-150-140zM290 360l-30-110 100 70zM510 360l30-110-100 70zM330 590c-20 40-30 100-20 170h180c10-70 0-130-20-170zM480 700c80 0 140-40 160-110-30 30-80 50-150 50z' fill='url(#fig)'/>
+<ellipse cx='400' cy='812' rx='150' ry='22' fill='#ffd27a' fill-opacity='.25' filter='url(#blur)'/>
+<text x='70' y='140' fill='#ffd27a' fill-opacity='.85' font-family='sans-serif' font-size='64' font-weight='700' writing-mode='tb' letter-spacing='10'>狐ちゃん</text>
+<rect x='470' y='900' width='290' height='54' rx='27' fill='#000' fill-opacity='.45' stroke='#ffd27a' stroke-opacity='.6'/>
+<text x='615' y='935' text-anchor='middle' fill='#fff' font-family='sans-serif' font-size='22' font-weight='700' letter-spacing='2'>FOTO DE EJEMPLO</text>
+</svg>

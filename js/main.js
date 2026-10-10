@@ -16,6 +16,14 @@ const app = {
   cards: [],
   hooks: {},
   state: { filter: 'all', query: '' },
+  // Qué edita el panel en esta vista (ver admin.js).
+  admin: {
+    file: 'data/site.json',
+    label: 'catálogo',
+    editors: './admin-catalog.js',
+    get: () => app.site,
+    set: (v) => { app.site = v; },
+  },
 };
 
 /* ---------- Utilidades de datos ---------- */

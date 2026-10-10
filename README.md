@@ -7,6 +7,7 @@ Página estática (HTML/CSS/JS, sin build) con:
 - **Imprime tu modelo**: el cliente sube su STL/3MF/OBJ/GLB (si es multicolor, se ve con sus colores), lo ve sobre la cama de impresión, ajusta la escala y envía el pedido por WhatsApp. El archivo se procesa en su navegador y no se sube a ningún servidor.
 - **Panel secreto** para que el dueño añada, edite y elimine modelos, colores, precios y datos de contacto desde la misma página.
 - Modo oscuro (negro/rojo/gris) y modo claro.
+- **Vista de figuras** (`/figuras/`): galería de fotos de figuras pintadas a mano, con estilo neón propio. No está enlazada desde la página principal: se entra escribiendo la URL.
 
 ## Estructura
 
@@ -17,7 +18,14 @@ js/main.js          Lógica de la página
 js/scenes.js        Visores 3D (Three.js)
 js/models.js        Modelos de demostración generados por código
 js/model3mf.js      Lector de 3MF (piezas, colores y filamentos de Bambu/Orca/PrusaSlicer)
-js/admin.js         Panel de administración (solo se carga al activarlo)
+js/admin.js         Panel de administración: acceso, sesión y publicación (solo se carga al activarlo)
+js/admin-catalog.js Editores del catálogo 3D (página principal)
+js/admin-figuras.js Editores de la galería de figuras (solo fotos)
+figuras/index.html  Vista de figuras pintadas
+css/figuras.css     Tema neón de la vista de figuras
+js/figuras.js       Lógica de la vista de figuras
+data/figuras.json   Contenido de la galería de figuras
+images/figuras/     Fotos subidas desde el panel
 js/github.js        Publicación de cambios vía API de GitHub
 data/site.json      TODO el contenido editable (catálogo, colores, contacto…)
 data/admin.json     Se crea al configurar el panel (token cifrado)
@@ -72,6 +80,18 @@ En VS Code también puedes usar la extensión **Live Server** (clic derecho en `
 - Qué trae cada formato: **3MF** de Bambu Studio, Orca o PrusaSlicer trae el filamento de cada pieza y la pintura multicolor (los triángulos pintados con detalle muy fino se aproximan al color predominante). **GLB** trae colores y texturas. **STL** y **OBJ** no traen colores (el OBJ sí separa piezas por material). Las texturas solo se ven en *Colores del diseño*.
 - Los cambios se ven al instante en tu pantalla, pero **solo se guardan al pulsar Publicar**. Eso crea un commit en el repo, y GitHub Pages actualiza el sitio para todos en 1–2 minutos.
 - Si cierras la pestaña, la sesión se cierra sola.
+
+## Vista de figuras (/figuras/)
+
+Galería de figuras impresas y pintadas a mano. Aquí se publican **fotos**, no modelos 3D.
+
+- Dirección: `https://TU-USUARIO.github.io/NOMBRE-DEL-REPO/figuras/`. No hay enlaces hacia ella desde la página principal.
+- El panel se abre igual (`/figuras/#admin` o 5 toques al logo del pie) y usa la misma contraseña.
+- Barra del panel: **+ Figura**, **Textos** (título y presentación de la portada), **Publicar** y **Salir**.
+- Cada figura tiene nombre, serie (sirve de filtro), descripción, altura, precio, estado (*Disponible*, *Por encargo* o *Vendida*) y hasta 12 fotos. La primera es la portada; se reordenan con las flechas.
+- Las fotos se reducen y convierten a WebP en el navegador antes de publicarse (una de 1600 px y una miniatura de 640 px), así la galería carga rápido aunque subas fotos del celular.
+- WhatsApp, Instagram y demás datos de contacto se toman de `data/site.json`: se editan una sola vez desde la página principal (botón **Datos**).
+- Las tres figuras que vienen de ejemplo usan imágenes de muestra: bórralas cuando subas las tuyas.
 
 ## Seguridad
 
