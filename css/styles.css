@@ -216,6 +216,17 @@ body.no-3d .hero-inner { grid-template-columns: 1fr; }
 .swatches-sm .swatch { width: 22px; height: 22px; }
 .swatch-more { height: 22px; padding: 0 8px; border-radius: 999px; border: 1px solid var(--line-2); background: none; font-size: 0.72rem; color: var(--muted); }
 .swatch-more:hover { color: var(--text); border-color: var(--text); }
+
+/* Modelos multicolor y con colores del diseño */
+.swatches.is-summary { cursor: pointer; }
+.paint-summary { display: inline-flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--muted); min-height: 22px; }
+.paint-dots { display: inline-flex; }
+.paint-dots i { width: 18px; height: 18px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--line-2); }
+.paint-dots i + i { margin-left: -5px; }
+.paint-rainbow { --c: conic-gradient(#e3262f, #ffcb2e, #2fb36b, #2f7cf6, #8b5cf6, #e3262f); }
+.parts-pick { display: grid; gap: 12px; }
+.part-pick { display: grid; gap: 6px; }
+.part-pick .field-label { justify-content: flex-start; }
 .hero-controls .swatches { padding: 6px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 75%, transparent); border: 1px solid var(--line); backdrop-filter: blur(8px); }
 .hero-controls .swatch { width: 24px; height: 24px; border-color: var(--surface); }
 
@@ -508,6 +519,10 @@ body.is-admin .toasts { bottom: 96px; }
 .check-swatch input { position: absolute; opacity: 0; pointer-events: none; }
 .check-swatch span { width: 16px; height: 16px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1px var(--line-2); }
 .check.big { border: 0; padding: 10px 0; font-size: 0.9rem; }
+.field .hint { text-align: left; word-break: normal; }
+.part-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.part-edit { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 9rem); align-items: center; gap: 8px; }
+.part-orig { width: 18px; height: 18px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1px var(--line-2); }
 .color-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .color-row { display: grid; grid-template-columns: 44px 1fr 40px; gap: 10px; align-items: center; }
 .color-row input[type='color'] { width: 44px; height: 40px; padding: 2px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--surface-2); cursor: pointer; }

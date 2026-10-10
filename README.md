@@ -4,7 +4,7 @@ Página estática (HTML/CSS/JS, sin build) con:
 
 - **Portada** con un modelo 3D que se "imprime" capa por capa.
 - **Catálogo** de modelos 3D interactivos (girar, cambiar color, ver malla, zoom). El botón **Me interesa** abre WhatsApp con el mensaje listo.
-- **Imprime tu modelo**: el cliente sube su STL/OBJ/GLB, lo ve sobre la cama de impresión, ajusta la escala y envía el pedido por WhatsApp. El archivo se procesa en su navegador y no se sube a ningún servidor.
+- **Imprime tu modelo**: el cliente sube su STL/3MF/OBJ/GLB (si es multicolor, se ve con sus colores), lo ve sobre la cama de impresión, ajusta la escala y envía el pedido por WhatsApp. El archivo se procesa en su navegador y no se sube a ningún servidor.
 - **Panel secreto** para que el dueño añada, edite y elimine modelos, colores, precios y datos de contacto desde la misma página.
 - Modo oscuro (negro/rojo/gris) y modo claro.
 
@@ -16,6 +16,7 @@ css/styles.css      Estilos (colores en las variables de :root)
 js/main.js          Lógica de la página
 js/scenes.js        Visores 3D (Three.js)
 js/models.js        Modelos de demostración generados por código
+js/model3mf.js      Lector de 3MF (piezas, colores y filamentos de Bambu/Orca/PrusaSlicer)
 js/admin.js         Panel de administración (solo se carga al activarlo)
 js/github.js        Publicación de cambios vía API de GitHub
 data/site.json      TODO el contenido editable (catálogo, colores, contacto…)
@@ -63,7 +64,12 @@ En VS Code también puedes usar la extensión **Live Server** (clic derecho en `
 
 - Barra inferior: **+ Modelo**, **Colores**, **Datos** (nombre, WhatsApp, Instagram, email, ubicación, horario, moneda), **Publicar** y **Salir**.
 - Cada tarjeta muestra **Editar** y **Eliminar**.
-- Al subir un archivo 3D, las medidas se calculan solas (en mm).
+- Al subir un archivo 3D (STL, 3MF, OBJ o GLB), las medidas se calculan solas (en mm).
+- **Colores del modelo**: cada modelo tiene uno de tres modos.
+  - *Un color*: el cliente elige un color de filamento.
+  - *Multicolor*: el panel detecta las piezas del archivo; puedes renombrarlas y darles un color inicial. El cliente elige el color de cada pieza y el mensaje de WhatsApp las lista.
+  - *Colores del diseño*: se muestra con los colores que trae el archivo, fijos.
+- Qué trae cada formato: **3MF** de Bambu Studio, Orca o PrusaSlicer trae el filamento de cada pieza y la pintura multicolor (los triángulos pintados con detalle muy fino se aproximan al color predominante). **GLB** trae colores y texturas. **STL** y **OBJ** no traen colores (el OBJ sí separa piezas por material). Las texturas solo se ven en *Colores del diseño*.
 - Los cambios se ven al instante en tu pantalla, pero **solo se guardan al pulsar Publicar**. Eso crea un commit en el repo, y GitHub Pages actualiza el sitio para todos en 1–2 minutos.
 - Si cierras la pestaña, la sesión se cierra sola.
 
@@ -92,6 +98,6 @@ Todo está en `data/site.json`:
 | `printer` | Volumen de impresión en mm y altura de capa |
 | `pricing.perGram` | Si pones un número, "Imprime tu modelo" muestra un precio estimado |
 | `colors`, `materials` | Colores de filamento y materiales |
-| `items` | Catálogo. `model` puede ser `models/archivo.stl` o un modelo demo `procedural:…` |
+| `items` | Catálogo. `model` puede ser `models/archivo.stl` (o .3mf/.obj/.glb) o un modelo demo `procedural:…` |
 
-En `items`, `price: null` muestra "Cotizar". Si `colors` o `materials` quedan vacíos (`[]`), el modelo usa todos los disponibles.
+En `items`, `price: null` muestra "Cotizar". `colorMode` puede ser `"parts"` (con `parts: [{ "name": "Cuerpo", "color": "blanco" }, …]`, una entrada por pieza en el orden del archivo) u `"original"`; si falta, es de un color. Si `colors` o `materials` quedan vacíos (`[]`), el modelo usa todos los disponibles.

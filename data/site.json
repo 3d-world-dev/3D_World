@@ -135,6 +135,43 @@
       "model": "models/cuno1-mv1nzuy1.stl"
     },
     {
+      "id": "cohete-multicolor",
+      "name": "Cohete multicolor",
+      "category": "Juegos",
+      "description": "Se imprime en cuatro colores. Elige el color de cada pieza: cuerpo, punta y aletas, ventanas y tobera.",
+      "price": null,
+      "dimensions": {
+        "w": 113,
+        "d": 113,
+        "h": 180
+      },
+      "printTime": "6 h",
+      "materials": [],
+      "colors": [],
+      "defaultColor": "blanco",
+      "colorMode": "parts",
+      "parts": [
+        {
+          "name": "Cuerpo",
+          "color": "blanco"
+        },
+        {
+          "name": "Punta y aletas",
+          "color": "rojo"
+        },
+        {
+          "name": "Ventanas",
+          "color": "azul"
+        },
+        {
+          "name": "Tobera",
+          "color": "gris"
+        }
+      ],
+      "featured": true,
+      "model": "procedural:rocket"
+    },
+    {
       "id": "jarron-espiral",
       "name": "Jarrón Espiral",
       "category": "Decoración",

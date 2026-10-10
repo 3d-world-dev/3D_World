@@ -1,6 +1,6 @@
 // Modelos de demostración generados por código.
 // En data/site.json se usan como  "model": "procedural:<nombre>".
-// El dueño puede reemplazarlos por archivos reales (STL/OBJ/GLB) desde el panel.
+// El dueño puede reemplazarlos por archivos reales (STL/3MF/OBJ/GLB) desde el panel.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -15,8 +15,10 @@ const builders = {
   heartKeychain,
   hexOrganizer,
   d20,
+  rocket,
 };
 
+/* Devuelve una geometría, o { parts: [{ name, color, geometry }] } para modelos de varias piezas. */
 export function buildProcedural(name) {
   const build = builders[name];
   if (!build) throw new Error(`Modelo procedural desconocido: ${name}`);
@@ -170,4 +172,40 @@ function hexOrganizer() {
 
 function d20() {
   return new THREE.IcosahedronGeometry(1, 0);
+}
+
+/* Cohete multicolor: cuatro piezas, cada una pensada para un filamento distinto. */
+function rocket() {
+  const lathe = (pts) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 64).toNonIndexed();
+  const body = lathe([[0, 0.2], [0.3, 0.2], [0.4, 0.3], [0.44, 0.6], [0.44, 1.6], [0.41, 1.78], [0, 1.78]]);
+  const nose = lathe([[0, 1.77], [0.41, 1.77], [0.39, 2.0], [0.31, 2.27], [0.17, 2.5], [0, 2.62]]);
+  const nozzle = lathe([[0, 0.21], [0.24, 0.21], [0.2, 0.12], [0.3, -0.02], [0, -0.02]]);
+
+  const fin = new THREE.Shape();
+  [[0.36, 1.0], [0.36, 0.22], [0.84, 0], [0.84, 0.2], [0.52, 0.64]]
+    .forEach(([x, y], i) => (i ? fin.lineTo(x, y) : fin.moveTo(x, y)));
+  fin.closePath();
+  const fins = [];
+  for (let k = 0; k < 4; k++) {
+    const g = new THREE.ExtrudeGeometry(fin, { depth: 0.07, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 2 });
+    g.translate(0, 0, -0.035);
+    g.rotateY((k / 4) * TAU + Math.PI / 4);
+    fins.push(g);
+  }
+
+  const windows = [[1.35, 0.13], [1.0, 0.09]].map(([y, r]) => {
+    const g = new THREE.CylinderGeometry(r, r, 0.12, 40).toNonIndexed();
+    g.rotateX(Math.PI / 2);
+    g.translate(0, y, 0.41);
+    return g;
+  });
+
+  return {
+    parts: [
+      { name: 'Cuerpo', color: '#f1f1ee', geometry: [body] },
+      { name: 'Punta y aletas', color: '#e3262f', geometry: [nose, ...fins] },
+      { name: 'Ventanas', color: '#2f7cf6', geometry: windows },
+      { name: 'Tobera', color: '#8d8f96', geometry: [nozzle] },
+    ],
+  };
 }

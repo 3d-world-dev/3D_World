@@ -47,6 +47,30 @@ function defaultColor(item) {
   return list.find((c) => c.id === item.defaultColor) || list[0] || FALLBACK_COLOR;
 }
 
+/* Modo de color: 'single' (el cliente elige uno), 'parts' (uno por pieza) u 'original' (los del archivo). */
+function colorMode(item) {
+  if (item.colorMode === 'original') return 'original';
+  if (item.colorMode === 'parts' && item.parts?.length) return 'parts';
+  return 'single';
+}
+
+function defaultPartColors(item) {
+  const list = itemColors(item);
+  return (item.parts || []).map((p) => list.find((c) => c.id === p.color) || allColors().find((c) => c.id === p.color) || list[0] || FALLBACK_COLOR);
+}
+
+const partName = (item, i) => item.parts?.[i]?.name || `Pieza ${i + 1}`;
+
+/* Lo que se le pasa al visor 3D según el modo (ver scenes.js). sel = { color, parts }. */
+function itemPaint(item, sel) {
+  const mode = colorMode(item);
+  if (mode === 'original') return 'original';
+  if (mode === 'parts') return sel.parts.map((c) => c.hex);
+  return sel.color.hex;
+}
+
+const defaultSelection = (item) => ({ color: defaultColor(item), parts: defaultPartColors(item) });
+
 function itemMaterials(item) {
   const known = app.site.materials.map((m) => m.id);
   const list = (item.materials || []).filter((m) => known.includes(m));
@@ -64,11 +88,25 @@ function formatDims(d) {
   return `${[d.w, d.d, d.h].map((v) => fmt((v || 0) / 10, 1)).join(' × ')} cm`;
 }
 
-function interestMessage(item, color, material) {
+/* sel = { color, parts, material } de la tarjeta o de la ficha. */
+function interestMessage(item, sel) {
   let msg = `¡Hola! Me interesa el modelo "${item.name}"`;
-  if (material) msg += ` en ${material}`;
-  if (color?.name) msg += ` color ${color.name.toLowerCase()}`;
+  if (sel.material) msg += ` en ${sel.material}`;
+  const mode = colorMode(item);
+  if (mode === 'original') msg += ' con sus colores originales';
+  else if (mode === 'parts') msg += ` con estos colores: ${sel.parts.map((c, i) => `${partName(item, i)} ${c.name.toLowerCase()}`).join(', ')}`;
+  else if (sel.color?.name) msg += ` color ${sel.color.name.toLowerCase()}`;
   return `${msg}. ¿Me pueden dar más información?`;
+}
+
+/* Puntos de color que resumen un modelo multicolor u original en la tarjeta. */
+function renderPaintSummary(container, item, parts) {
+  const mode = colorMode(item);
+  const dots = mode === 'parts'
+    ? parts.map((c, i) => `<i style="--c:${esc(c.hex)}" title="${esc(`${partName(item, i)}: ${c.name}`)}"></i>`).join('')
+    : '<i class="paint-rainbow"></i>';
+  const label = mode === 'parts' ? `${parts.length} piezas · elige sus colores` : 'Colores originales del diseño';
+  container.innerHTML = `<span class="paint-summary"><span class="paint-dots">${dots}</span>${label}</span>`;
 }
 
 /* ---------- Componentes ---------- */
@@ -149,7 +187,7 @@ function renderHero() {
   const featured = items.filter((i) => i.featured);
   let list = featured.length ? featured : items.slice(0, 4);
   if (!list.length) list = [{ id: '', name: 'Jarrón de muestra', model: 'procedural:twistVase', dimensions: { h: 160 } }];
-  app.hero.setItems(list, (item) => defaultColor(item).hex);
+  app.hero.setItems(list, (item) => itemPaint(item, defaultSelection(item)));
 }
 
 function heroCallbacks() {
@@ -189,7 +227,7 @@ function renderCatalog() {
 }
 
 function buildCard(item) {
-  const card = { item, color: defaultColor(item), material: itemMaterials(item)[0] };
+  const card = { item, ...defaultSelection(item), material: itemMaterials(item)[0] };
   const el = document.createElement('article');
   el.className = 'card';
   el.dataset.id = item.id;
@@ -213,18 +251,31 @@ function buildCard(item) {
   const view = $('.card-view', el);
   const swatches = $('.swatches', el);
   const wa = $('[data-interest]', el);
-  card.updateLink = () => { wa.href = waLink(interestMessage(item, card.color, card.material)); };
+  card.updateLink = () => { wa.href = waLink(interestMessage(item, card)); };
   card.setColor = (c) => {
     card.color = c;
     selectSwatch(swatches, c.id);
-    if (card.handle) app.grid.setColor(card.handle, c.hex);
+    if (card.handle) app.grid.setPaint(card.handle, itemPaint(item, card));
     card.updateLink();
   };
-  renderSwatches(swatches, itemColors(item), card.color.id, card.setColor, { max: 6, onMore: () => openModal(item, card) });
+  card.setParts = (parts) => {
+    card.parts = parts;
+    renderPaintSummary(swatches, item, parts);
+    if (card.handle) app.grid.setPaint(card.handle, itemPaint(item, card));
+    card.updateLink();
+  };
+  if (colorMode(item) === 'single') {
+    renderSwatches(swatches, itemColors(item), card.color.id, card.setColor, { max: 6, onMore: () => openModal(item, card) });
+  } else {
+    swatches.removeAttribute('role');
+    swatches.classList.add('is-summary');
+    swatches.addEventListener('click', () => openModal(item, card));
+    renderPaintSummary(swatches, item, card.parts);
+  }
   card.updateLink();
   view.addEventListener('click', () => openModal(item, card));
   $('[data-open]', el).addEventListener('click', () => openModal(item, card));
-  if (app.grid) card.handle = app.grid.add(view, item.model, card.color.hex);
+  if (app.grid) card.handle = app.grid.add(view, item.model, itemPaint(item, card));
   app.hooks.decorateCard?.(el, item);
   $('#grid').append(el);
   return card;
@@ -274,9 +325,11 @@ let modalState = null;
 
 function openModal(item, card = app.cards.find((c) => c.item === item)) {
   const modal = $('#modal');
+  const sel = card || defaultSelection(item);
   modalState = {
     item, card,
-    color: card?.color || defaultColor(item),
+    color: sel.color,
+    parts: sel.parts.slice(),
     material: card?.material || itemMaterials(item)[0],
   };
   $('#m-cat').textContent = item.category || '';
@@ -292,14 +345,7 @@ function openModal(item, card = app.cards.find((c) => c.item === item)) {
   $('#m-material-field').hidden = !mats.length;
   $('#m-materials').innerHTML = mats.map((m) => `<button type="button" role="radio" aria-checked="${m === modalState.material}" data-m="${esc(m)}">${esc(m)}</button>`).join('');
 
-  renderSwatches($('#m-colors'), itemColors(item), modalState.color.id, (c) => {
-    modalState.color = c;
-    $('#m-color-name').textContent = c.name;
-    modalViewer?.setColor(c.hex);
-    modalState.card?.setColor(c);
-    updateModalLink();
-  });
-  $('#m-color-name').textContent = modalState.color.name;
+  renderModalColors();
   $('#m-price').textContent = priceText(item);
   updateModalLink();
 
@@ -315,15 +361,58 @@ function openModal(item, card = app.cards.find((c) => c.item === item)) {
   if (app.scenes) {
     modalViewer ??= new app.scenes.ModalViewer($('#modal-canvas'));
     modalViewer.start();
-    modalViewer.show(item.model, modalState.color.hex).catch((err) => {
+    modalViewer.show(item.model, itemPaint(item, modalState)).catch((err) => {
       console.warn(err);
       toast('No se pudo cargar el modelo 3D.', 'error');
     });
   }
 }
 
+function renderModalColors() {
+  const { item } = modalState;
+  const mode = colorMode(item);
+  const colorField = $('#m-color-field'), partsList = $('#m-parts');
+  $('#m-parts-field').hidden = mode !== 'parts';
+  colorField.hidden = mode === 'parts';
+  $('#m-colors').innerHTML = '';
+  partsList.innerHTML = '';
+
+  if (mode === 'original') {
+    $('#m-color-name').textContent = 'los originales del diseño';
+    return;
+  }
+  if (mode === 'single') {
+    renderSwatches($('#m-colors'), itemColors(item), modalState.color.id, (c) => {
+      modalState.color = c;
+      $('#m-color-name').textContent = c.name;
+      modalViewer?.setPaint(c.hex);
+      modalState.card?.setColor(c);
+      updateModalLink();
+    });
+    $('#m-color-name').textContent = modalState.color.name;
+    return;
+  }
+  modalState.parts.forEach((color, i) => {
+    const row = document.createElement('div');
+    row.className = 'part-pick';
+    row.innerHTML = `<span class="field-label">${esc(partName(item, i))}: <strong></strong></span>
+      <div class="swatches swatches-sm" role="radiogroup"></div>`;
+    const nameEl = $('strong', row), sw = $('.swatches', row);
+    sw.setAttribute('aria-label', `Color de ${partName(item, i)}`);
+    nameEl.textContent = color.name;
+    renderSwatches(sw, itemColors(item), color.id, (c) => {
+      modalState.parts[i] = c;
+      nameEl.textContent = c.name;
+      modalViewer?.setPaint(itemPaint(item, modalState));
+      modalState.card?.setParts(modalState.parts.slice());
+      updateModalLink();
+    });
+    partsList.append(row);
+  });
+}
+
 function updateModalLink() {
-  $('#m-wa').href = waLink(interestMessage(modalState.item, modalState.color, modalState.material));
+  $('#m-wa').href = waLink(interestMessage(modalState.item, modalState));
 }
 
 function closeModal(fromHistory = false) {
@@ -400,13 +489,17 @@ function renderContact() {
 /* ---------- "Imprime tu modelo" ---------- */
 
 let uploadViewer = null;
-const upload = { file: null, size: null, volume: 0, scale: 1, material: null, color: null };
+const upload = { file: null, size: null, volume: 0, scale: 1, material: null, color: null, ownColors: false };
+// Opción extra cuando el archivo del cliente trae sus propios colores (3MF multicolor, GLB…).
+const FILE_COLORS = { id: '__file', name: 'Los del archivo', hex: 'conic-gradient(#e3262f, #ffcb2e, #2fb36b, #2f7cf6, #8b5cf6, #e3262f)' };
+const uploadPaint = () => (upload.color === FILE_COLORS ? 'original' : upload.color.hex);
 
 function renderUploadOptions() {
   const mats = app.site.materials;
   if (!mats.some((m) => m.id === upload.material)) upload.material = mats[0]?.id;
   $('#upload-material').innerHTML = mats.map((m) => `<option value="${esc(m.id)}" ${m.id === upload.material ? 'selected' : ''}>${esc(m.name)}</option>`).join('');
-  if (!allColors().some((c) => c.id === upload.color?.id)) {
+  const options = upload.ownColors ? [FILE_COLORS, ...allColors()] : allColors();
+  if (!options.includes(upload.color)) {
     // Primer color que se distinga bien sobre la cama oscura.
     const luminance = (hex) => {
       const n = parseInt(hex.slice(1), 16);
@@ -414,9 +507,9 @@ function renderUploadOptions() {
     };
     upload.color = allColors().find((c) => luminance(c.hex) > 0.35) || allColors()[0] || FALLBACK_COLOR;
   }
-  renderSwatches($('#upload-colors'), allColors(), upload.color.id, (c) => {
+  renderSwatches($('#upload-colors'), options, upload.color.id, (c) => {
     upload.color = c;
-    uploadViewer?.setColor(c.hex);
+    uploadViewer?.setPaint(uploadPaint());
     updateUpload();
   });
   updateUpload();
@@ -431,14 +524,17 @@ function uploadError(msg) {
 async function handleFile(file) {
   uploadError('');
   const ext = file.name.split('.').pop().toLowerCase();
-  if (!['stl', 'obj', 'glb'].includes(ext)) return uploadError('Formato no soportado. Usa un archivo STL, OBJ o GLB.');
+  if (!['stl', 'obj', 'glb', '3mf'].includes(ext)) return uploadError('Formato no soportado. Usa un archivo STL, 3MF, OBJ o GLB.');
   if (file.size > 150 * 1024 * 1024) return uploadError('El archivo pesa más de 150 MB. Envíanoslo directo por WhatsApp.');
   if (!app.scenes) return uploadError('Tu navegador no puede mostrar modelos 3D. Envíanos el archivo directo por WhatsApp.');
   $('#dz-loading').hidden = false;
   try {
     uploadViewer ??= new app.scenes.UploadViewer($('#upload-canvas'), app.site.printer);
-    const { size, volume } = await uploadViewer.load(file, upload.color.hex);
-    Object.assign(upload, { file, size, volume });
+    const { size, volume, ownColors } = await uploadViewer.load(file, uploadPaint());
+    Object.assign(upload, { file, size, volume, ownColors });
+    if (ownColors) upload.color = FILE_COLORS;
+    renderUploadOptions();
+    uploadViewer.setPaint(uploadPaint());
     $('#file-name').textContent = file.name;
     $('#dz-empty').hidden = true;
     $('#dropzone').classList.add('has-model');
@@ -652,7 +748,7 @@ async function init() {
 // API que usa el panel de administración (js/admin.js).
 Object.assign(app, {
   render, toast, openModal, closeModal, waLink, esc, fillIcons, observeReveal,
-  allColors, itemColors, defaultColor, itemMaterials,
+  allColors, itemColors, defaultColor, itemMaterials, colorMode,
 });
 
 init();

@@ -128,7 +128,7 @@
           <h2>¿Ya tienes tu diseño? Lo imprimimos.</h2>
           <p>Arrastra tu archivo para verlo en 3D sobre nuestra cama de impresión, ajustar el tamaño y conocer sus medidas. Después nos lo envías por WhatsApp.</p>
           <ol class="mini-steps">
-            <li><strong>Sube tu archivo</strong><span>STL, OBJ o GLB. Se procesa en tu navegador; no se sube a ningún servidor.</span></li>
+            <li><strong>Sube tu archivo</strong><span>STL, 3MF, OBJ o GLB. Se procesa en tu navegador; no se sube a ningún servidor.</span></li>
             <li><strong>Ajusta escala, material y color</strong><span>Te avisamos si no cabe en la impresora.</span></li>
             <li><strong>Envíanos el pedido</strong><span>Abrimos WhatsApp con los datos listos; solo adjunta el archivo en el chat.</span></li>
           </ol>
@@ -137,12 +137,12 @@
 
         <div class="upload-card reveal">
           <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Subir archivo 3D">
-            <input type="file" id="file-input" accept=".stl,.obj,.glb" hidden>
+            <input type="file" id="file-input" accept=".stl,.3mf,.obj,.glb" hidden>
             <canvas id="upload-canvas"></canvas>
             <div class="dz-empty" id="dz-empty">
               <span class="dz-icon" data-icon="upload"></span>
               <strong>Suelta tu archivo aquí</strong>
-              <span>o haz clic para elegirlo · STL, OBJ, GLB</span>
+              <span>o haz clic para elegirlo · STL, 3MF, OBJ, GLB</span>
             </div>
             <div class="dz-loading" id="dz-loading" hidden><span class="loader"></span>Leyendo modelo…</div>
           </div>
@@ -215,7 +215,7 @@
           <h2>Lo que más nos preguntan</h2>
         </div>
         <div class="faq reveal">
-          <details><summary>¿Qué archivos aceptan?</summary><p>STL, OBJ y GLB. Si solo tienes una foto, un dibujo o una idea, escríbenos y vemos juntos qué se puede hacer.</p></details>
+          <details><summary>¿Qué archivos aceptan?</summary><p>STL, 3MF, OBJ y GLB. Si tu 3MF es multicolor (Bambu Studio, Orca, PrusaSlicer) verás sus colores. Si solo tienes una foto, un dibujo o una idea, escríbenos y vemos juntos qué se puede hacer.</p></details>
           <details><summary>¿Cuánto tarda un pedido?</summary><p>Depende del tamaño, del relleno y de la cantidad de piezas. Al cotizar te damos un tiempo estimado.</p></details>
           <details><summary>¿Puedo elegir el color?</summary><p>Sí. Cada modelo muestra los colores disponibles; si buscas otro, pregúntanos.</p></details>
           <details><summary>¿Qué tan resistentes son las piezas?</summary><p>Depende del material y del relleno. Para piezas decorativas recomendamos PLA, para piezas funcionales PETG y para piezas flexibles TPU.</p></details>
@@ -278,9 +278,13 @@
           <span class="field-label">Material</span>
           <div class="seg" id="m-materials" role="radiogroup" aria-label="Material"></div>
         </div>
-        <div class="field">
+        <div class="field" id="m-color-field">
           <span class="field-label">Color: <strong id="m-color-name"></strong></span>
           <div class="swatches" id="m-colors" role="radiogroup" aria-label="Color"></div>
+        </div>
+        <div class="field" id="m-parts-field" hidden>
+          <span class="field-label">Elige el color de cada pieza</span>
+          <div class="parts-pick" id="m-parts"></div>
         </div>
         <div class="m-footer">
           <span class="m-price" id="m-price"></span>

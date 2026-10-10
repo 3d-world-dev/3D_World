@@ -6,7 +6,6 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildProcedural } from './models.js';
 
 export const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -103,80 +102,222 @@ export function makePrintMaterial(hex) {
 }
 
 /* ---------- Carga de modelos ---------- */
+// Un modelo cargado es { geometry, parts }: una sola geometría con un grupo por pieza, y por pieza
+// { name, color, map, vertexColors }. color es el que trae el archivo ('#rrggbb') o null si no trae.
 
 export const extOf = (name) => name.split('?')[0].split('.').pop().toLowerCase();
+export const MODEL_EXTS = ['stl', 'obj', 'glb', '3mf'];
+export const ORIGINAL = 'original';
+const NEUTRAL = '#8d8f96';
+const MAX_SPLIT_COLORS = 16;
+const Z_UP = new THREE.Matrix4().makeRotationX(-Math.PI / 2); // STL y 3MF vienen con Z hacia arriba
 
-const geometryCache = new Map();
+const modelCache = new Map();
 const localFiles = new Map();
 
 /* Permite previsualizar archivos que el dueño aún no ha publicado. */
 export function registerLocalFile(path, file) {
   localFiles.set(path, file);
-  geometryCache.delete(path);
+  modelCache.delete(path);
 }
 
-/* Devuelve la geometría centrada y escalada para que su lado mayor mida 2 unidades. */
-export function loadGeometry(src) {
-  if (!geometryCache.has(src)) {
-    const promise = fetchGeometry(src).then(normalizeGeometry);
-    promise.catch(() => geometryCache.delete(src));
-    geometryCache.set(src, promise);
+/* Devuelve el modelo centrado y escalado para que su lado mayor mida 2 unidades. */
+export function loadModel(src) {
+  if (!modelCache.has(src)) {
+    const promise = fetchModel(src).then((m) => (normalizeGeometry(m.geometry), m));
+    promise.catch(() => modelCache.delete(src));
+    modelCache.set(src, promise);
   }
-  return geometryCache.get(src);
+  return modelCache.get(src);
 }
 
-async function fetchGeometry(src) {
-  if (src.startsWith('procedural:')) return buildProcedural(src.slice('procedural:'.length));
+async function fetchModel(src) {
+  if (src.startsWith('procedural:')) return buildModel(proceduralPieces(src.slice('procedural:'.length)));
   if (localFiles.has(src)) return parseModelBuffer(await localFiles.get(src).arrayBuffer(), extOf(src));
   const res = await fetch(src);
   if (!res.ok) throw new Error(`No se pudo cargar ${src} (${res.status})`);
   return parseModelBuffer(await res.arrayBuffer(), extOf(src));
 }
 
-/* Convierte un archivo a una sola BufferGeometry en milímetros con Y hacia arriba. */
+/* Convierte un archivo en un modelo en milímetros con Y hacia arriba. */
 export async function parseModelBuffer(buffer, ext) {
   switch (ext) {
     case 'stl': {
       const g = new STLLoader().parse(buffer);
-      g.rotateX(-Math.PI / 2); // los STL vienen con Z hacia arriba
-      return g;
+      const vertexColors = !!g.hasColors;
+      return buildModel(splitPieces([{
+        geometry: subGeometry(g, { matrix: Z_UP, color: vertexColors }), key: 'stl', name: '', color: null, vertexColors,
+      }]));
     }
     case 'obj':
-      return groupToGeometry(new OBJLoader().parse(new TextDecoder().decode(buffer)));
+      // Sin el .mtl no hay colores, pero los nombres de material sirven para separar piezas.
+      return buildModel(splitPieces(objectPieces(new OBJLoader().parse(new TextDecoder().decode(buffer)), false)));
     case 'glb': {
       const gltf = await new GLTFLoader().parseAsync(buffer, '');
-      return groupToGeometry(gltf.scene);
+      return buildModel(splitPieces(objectPieces(gltf.scene, true)));
+    }
+    case '3mf': {
+      const { parse3MF } = await import('./model3mf.js');
+      return buildModel(parse3MF(buffer).map((p) => {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(p.positions, 3));
+        geometry.applyMatrix4(Z_UP);
+        return { geometry, key: p.key, name: p.name, color: p.color };
+      }));
     }
     default:
       throw new Error(`Formato no soportado: .${ext}`);
   }
 }
 
-function groupToGeometry(root) {
-  root.updateMatrixWorld(true);
-  const parts = [];
-  root.traverse((o) => {
-    if (!o.isMesh || !o.geometry) return;
-    let g = o.geometry.clone();
-    g.applyMatrix4(o.matrixWorld);
-    if (g.index) g = g.toNonIndexed();
-    g.morphAttributes = {};
-    parts.push(g);
-  });
-  if (!parts.length) throw new Error('El archivo no contiene mallas 3D');
-  const keepNormals = parts.every((g) => g.attributes.normal);
-  for (const g of parts) {
-    for (const name of Object.keys(g.attributes)) {
-      if (name !== 'position' && !(keepNormals && name === 'normal')) g.deleteAttribute(name);
-    }
-  }
-  const merged = parts.length === 1 ? parts[0] : mergeGeometries(parts);
-  if (!keepNormals) merged.computeVertexNormals();
-  return merged;
+function proceduralPieces(name) {
+  const built = buildProcedural(name);
+  const list = built.isBufferGeometry ? [{ geometry: built }] : built.parts;
+  return list.flatMap((p, i) => [].concat(p.geometry).map((g) => ({
+    geometry: subGeometry(g), key: `p${i}`, name: p.name || '', color: p.color || null,
+  })));
 }
 
+/* Copia (un tramo de) una geometría a una nueva sin índice, con atributos Float32 simples. */
+function subGeometry(src, { start = 0, count = Infinity, matrix = null, uv = false, color = false } = {}) {
+  const idx = src.index;
+  const total = idx ? idx.count : src.attributes.position.count;
+  const n = Math.max(0, Math.min(count, total - start));
+  const getters = ['getX', 'getY', 'getZ', 'getW'];
+  const copy = (attr, size) => {
+    const out = new Float32Array(n * size);
+    for (let i = 0; i < n; i++) {
+      const v = idx ? idx.getX(start + i) : start + i;
+      for (let k = 0; k < size; k++) out[i * size + k] = k < attr.itemSize ? attr[getters[k]](v) : 1;
+    }
+    return new THREE.BufferAttribute(out, size);
+  };
+  const g = new THREE.BufferGeometry();
+  const a = src.attributes;
+  g.setAttribute('position', copy(a.position, 3));
+  if (a.normal) g.setAttribute('normal', copy(a.normal, 3));
+  if (uv && a.uv) g.setAttribute('uv', copy(a.uv, 2));
+  if (color && a.color) g.setAttribute('color', copy(a.color, 3));
+  if (matrix) g.applyMatrix4(matrix);
+  return g;
+}
+
+const GENERIC_NAME = /^(__default|default(material)?|material|mat|none|untitled|mesh|object|node)?[\s._#-]*\d*$/i;
+const cleanName = (s) => {
+  const t = String(s || '').trim();
+  return GENERIC_NAME.test(t) ? '' : t.slice(0, 40);
+};
+
+/* Piezas de una escena de three.js (OBJ, GLB): una por malla y material. */
+function objectPieces(root, colorsKnown) {
+  root.updateMatrixWorld(true);
+  const pieces = [];
+  root.traverse((o) => {
+    if (!o.isMesh || !o.geometry?.attributes.position) return;
+    const mats = [].concat(o.material);
+    const ranges = Array.isArray(o.material) && o.geometry.groups.length
+      ? o.geometry.groups : [{ start: 0, count: Infinity, materialIndex: 0 }];
+    for (const r of ranges) {
+      const mat = mats[r.materialIndex] || mats[0];
+      const map = mat?.map || null;
+      const vertexColors = !!(mat?.vertexColors && o.geometry.attributes.color);
+      const color = colorsKnown && mat?.color && mat.name !== THREE.Loader.DEFAULT_MATERIAL_NAME ? `#${mat.color.getHexString()}` : null;
+      const name = cleanName(mat?.name) || cleanName(o.name) || cleanName(o.parent?.name);
+      const geometry = subGeometry(o.geometry, { start: r.start, count: r.count, matrix: o.matrixWorld, uv: !!map, color: vertexColors });
+      const key = map ? `m${mat.uuid}` : vertexColors ? `v${geometry.uuid}` : color ? `c${color}` : `n${cleanName(mat?.name) || o.uuid}`;
+      pieces.push({ geometry, key, name, color, map, vertexColors, tint: mat?.color });
+    }
+  });
+  return pieces;
+}
+
+/* Piezas con colores por vértice: si son pocos colores, se separan en piezas de un color. */
+function splitPieces(pieces) {
+  return pieces.flatMap((piece) => {
+    if (!piece.vertexColors) return [piece];
+    const g = piece.geometry, col = g.attributes.color.array, n = g.attributes.position.count;
+    const tint = piece.tint || new THREE.Color(1, 1, 1);
+    const buckets = new Map();
+    for (let t = 0; t + 2 < n; t += 3) {
+      const q = (k) => Math.round(((col[t * 3 + k] + col[t * 3 + 3 + k] + col[t * 3 + 6 + k]) / 3) * 255);
+      const key = (q(0) << 16) | (q(1) << 8) | q(2);
+      if (!buckets.has(key)) {
+        if (buckets.size >= MAX_SPLIT_COLORS) return [piece]; // degradados o pintura detallada: se deja tal cual
+        buckets.set(key, []);
+      }
+      buckets.get(key).push(t);
+    }
+    return [...buckets].map(([key, tris]) => {
+      const c = new THREE.Color((key >> 16) / 255, ((key >> 8) & 255) / 255, (key & 255) / 255).multiply(tint);
+      const hex = `#${c.getHexString()}`;
+      const out = new THREE.BufferGeometry();
+      for (const name of ['position', 'normal']) {
+        const a = g.attributes[name];
+        if (!a) continue;
+        const arr = new Float32Array(tris.length * 9);
+        tris.forEach((t, i) => arr.set(a.array.subarray(t * 3, t * 3 + 9), i * 9));
+        out.setAttribute(name, new THREE.BufferAttribute(arr, 3));
+      }
+      return { geometry: out, key: `c${hex}`, name: buckets.size === 1 ? piece.name : '', color: hex };
+    });
+  });
+}
+
+/* Une las piezas (las de igual clave forman una sola) en una geometría con un grupo por pieza. */
+function buildModel(pieces) {
+  const parts = [], lists = [], byKey = new Map();
+  for (const p of pieces) {
+    if (!p.geometry.attributes.position.count) continue;
+    let i = byKey.get(p.key);
+    if (i === undefined) {
+      byKey.set(p.key, (i = parts.length));
+      parts.push({ name: p.name || '', color: p.color || null, map: p.map || null, vertexColors: !!p.vertexColors });
+      lists.push([]);
+    } else if (!parts[i].name && p.name) {
+      parts[i].name = p.name;
+    }
+    lists[i].push(p.geometry);
+  }
+  if (!parts.length) throw new Error('El archivo no contiene mallas 3D');
+
+  const withUV = parts.some((p) => p.map), withColor = parts.some((p) => p.vertexColors);
+  const total = lists.flat().reduce((s, g) => s + g.attributes.position.count, 0);
+  const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3);
+  const uv = withUV ? new Float32Array(total * 2) : null;
+  const col = withColor ? new Float32Array(total * 3).fill(1) : null;
+  const geometry = new THREE.BufferGeometry();
+  let offset = 0;
+  lists.forEach((geos, i) => {
+    const start = offset;
+    for (const g of geos) {
+      if (!g.attributes.normal) g.computeVertexNormals();
+      pos.set(g.attributes.position.array, offset * 3);
+      nor.set(g.attributes.normal.array, offset * 3);
+      if (uv && g.attributes.uv) uv.set(g.attributes.uv.array, offset * 2);
+      if (col && g.attributes.color) col.set(g.attributes.color.array, offset * 3);
+      offset += g.attributes.position.count;
+    }
+    geometry.addGroup(start, offset - start, i);
+  });
+  geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geometry.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  if (uv) geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  if (col) geometry.setAttribute('color', new THREE.BufferAttribute(col, 3));
+
+  const seen = new Map();
+  parts.forEach((p, i) => {
+    const base = p.name || `Pieza ${i + 1}`;
+    const k = (seen.get(base) || 0) + 1;
+    seen.set(base, k);
+    p.name = k > 1 ? `${base} ${k}` : base;
+  });
+  return { geometry, parts };
+}
+
+/* ¿El archivo trae colores propios? */
+export const hasOwnColors = (model) => model.parts.some((p) => p.color || p.map || p.vertexColors);
+
 function normalizeGeometry(g) {
-  if (!g.attributes.normal) g.computeVertexNormals();
   g.computeBoundingBox();
   const size = g.boundingBox.getSize(new THREE.Vector3());
   const center = g.boundingBox.getCenter(new THREE.Vector3());
@@ -187,6 +328,34 @@ function normalizeGeometry(g) {
   g.computeBoundingSphere();
   return g;
 }
+
+/* ---------- Color de las piezas ----------
+ * paint puede ser '#hex' (todo de un color), ['#hex', …] (un color por pieza)
+ * u ORIGINAL (los colores, texturas y colores por vértice del archivo). */
+
+function makeModelMesh(model, paint) {
+  const mesh = new THREE.Mesh(model.geometry, model.parts.map(() => makePrintMaterial(NEUTRAL)));
+  mesh.userData.parts = model.parts;
+  paintMesh(mesh, paint);
+  return mesh;
+}
+
+function paintMesh(mesh, paint) {
+  const original = paint === ORIGINAL;
+  mesh.material.forEach((m, i) => {
+    const p = mesh.userData.parts[i];
+    const hex = original ? p.color || NEUTRAL : Array.isArray(paint) ? paint[i] || p.color || NEUTRAL : paint || NEUTRAL;
+    const map = original ? p.map : null;
+    const vertexColors = original && p.vertexColors;
+    if (m.map !== map || m.vertexColors !== vertexColors) {
+      Object.assign(m, { map, vertexColors });
+      m.needsUpdate = true;
+    }
+    m.color.set(hex);
+  });
+}
+
+const disposeMesh = (mesh) => mesh?.material.forEach((m) => m.dispose());
 
 /* Volumen (en unidades³ de la geometría) por suma de tetraedros con signo. */
 export function meshVolume(geo) {
@@ -205,10 +374,11 @@ export function meshVolume(geo) {
 
 /* Medidas reales (mm) de un archivo, sin normalizar. */
 export async function measureFile(file) {
-  const geo = await parseModelBuffer(await file.arrayBuffer(), extOf(file.name));
+  const model = await parseModelBuffer(await file.arrayBuffer(), extOf(file.name));
+  const geo = model.geometry;
   geo.computeBoundingBox();
   const size = geo.boundingBox.getSize(new THREE.Vector3());
-  return { geo, size, volume: meshVolume(geo) };
+  return { model, size, volume: meshVolume(geo) };
 }
 
 /* ---------- Animación de impresión ---------- */
@@ -253,7 +423,7 @@ class PrintAnimator {
 
   attach(mesh) {
     this.mesh = mesh;
-    mesh.material.clippingPlanes = [this.plane];
+    for (const m of mesh.material) m.clippingPlanes = [this.plane];
     this.box = mesh.geometry.boundingBox.clone();
     const size = this.box.getSize(new THREE.Vector3());
     const side = Math.max(size.x, size.z) * 1.3;
@@ -358,9 +528,9 @@ export class HeroViewer {
 
   async show(item) {
     const token = (this.token = (this.token || 0) + 1);
-    let geo;
+    let model;
     try {
-      geo = await loadGeometry(item.model);
+      model = await loadModel(item.model);
     } catch (err) {
       console.warn(err);
       if (this.items.length > 1) setTimeout(() => this.next(), 500);
@@ -369,12 +539,12 @@ export class HeroViewer {
     if (token !== this.token) return;
     if (this.mesh) {
       this.pivot.remove(this.mesh);
-      this.mesh.material.dispose();
+      disposeMesh(this.mesh);
     }
     this.item = item;
-    this.mesh = new THREE.Mesh(geo, makePrintMaterial(this.colorOverride || this.colorFor(item)));
+    this.mesh = makeModelMesh(model, this.colorOverride || this.colorFor(item));
     this.pivot.add(this.mesh);
-    this.shadow.position.y = geo.boundingBox.min.y - 0.002;
+    this.shadow.position.y = model.geometry.boundingBox.min.y - 0.002;
     this.holdUntil = Infinity;
     this.animator.attach(this.mesh);
     this.animator.start();
@@ -384,7 +554,7 @@ export class HeroViewer {
 
   setColor(hex) {
     this.colorOverride = hex;
-    this.mesh?.material.color.set(hex);
+    if (this.mesh) paintMesh(this.mesh, hex);
   }
 
   replay() {
@@ -422,9 +592,9 @@ export class GridRenderer {
     this.renderer.setAnimationLoop(() => this.tick());
   }
 
-  add(el, src, hex) {
+  add(el, src, paint) {
     const card = {
-      el, mesh: null, material: makePrintMaterial(hex),
+      el, mesh: null, paint,
       rot: Math.random() * Math.PI * 2, tiltX: 0, tiltY: 0, tx: 0, ty: 0, hover: false, scale: 1,
     };
     card.onMove = (e) => {
@@ -436,10 +606,10 @@ export class GridRenderer {
     card.onLeave = () => { card.hover = false; card.tx = card.ty = 0; };
     el.addEventListener('pointermove', card.onMove);
     el.addEventListener('pointerleave', card.onLeave);
-    loadGeometry(src)
-      .then((geo) => {
+    loadModel(src)
+      .then((model) => {
         if (!this.cards.has(card)) return;
-        card.mesh = new THREE.Mesh(geo, card.material);
+        card.mesh = makeModelMesh(model, card.paint);
         el.classList.add('is-loaded');
       })
       .catch((err) => {
@@ -453,7 +623,7 @@ export class GridRenderer {
   remove(card) {
     card.el.removeEventListener('pointermove', card.onMove);
     card.el.removeEventListener('pointerleave', card.onLeave);
-    card.material.dispose();
+    disposeMesh(card.mesh);
     this.cards.delete(card);
   }
 
@@ -461,8 +631,9 @@ export class GridRenderer {
     for (const card of [...this.cards]) this.remove(card);
   }
 
-  setColor(card, hex) {
-    card.material.color.set(hex);
+  setPaint(card, paint) {
+    card.paint = paint;
+    if (card.mesh) paintMesh(card.mesh, paint);
   }
 
   setActive(v) { this.active = v; }
@@ -522,31 +693,32 @@ export class ModalViewer {
     new ResizeObserver(() => fitCanvas(this.renderer, this.camera, canvas)).observe(canvas);
   }
 
-  async show(src, hex, { print = true } = {}) {
+  async show(src, paint, { print = true } = {}) {
     const token = (this.token = (this.token || 0) + 1);
-    const geo = await loadGeometry(src);
-    if (token !== this.token) return;
+    const model = await loadModel(src);
+    if (token !== this.token) return model;
     if (this.mesh) {
       this.scene.remove(this.mesh);
-      this.mesh.material.dispose();
+      disposeMesh(this.mesh);
     }
-    this.mesh = new THREE.Mesh(geo, makePrintMaterial(hex));
-    this.mesh.material.wireframe = this.wire;
+    this.mesh = makeModelMesh(model, paint);
+    for (const m of this.mesh.material) m.wireframe = this.wire;
     this.scene.add(this.mesh);
-    this.shadow.position.y = geo.boundingBox.min.y - 0.002;
+    this.shadow.position.y = model.geometry.boundingBox.min.y - 0.002;
     this.camera.position.set(0, 0.8, 5.2);
     this.controls.target.set(0, 0, 0);
     this.controls.update();
     this.animator.attach(this.mesh);
     if (print) this.animator.start();
+    return model;
   }
 
-  setColor(hex) { this.mesh?.material.color.set(hex); }
+  setPaint(paint) { if (this.mesh) paintMesh(this.mesh, paint); }
   replay() { this.animator.start(); }
 
   toggleWire() {
     this.wire = !this.wire;
-    if (this.mesh) this.mesh.material.wireframe = this.wire;
+    for (const m of this.mesh?.material || []) m.wireframe = this.wire;
     return this.wire;
   }
 
@@ -573,7 +745,7 @@ export class ModalViewer {
   dispose() {
     this.stop();
     this.controls.dispose();
-    this.mesh?.material.dispose();
+    disposeMesh(this.mesh);
     this.renderer.dispose();
     this.renderer.forceContextLoss();
   }
@@ -626,24 +798,24 @@ export class UploadViewer {
     this.bedGroup.add(plate, grid, volume);
   }
 
-  async load(file, hex) {
-    const { geo, size, volume } = await measureFile(file);
+  async load(file, paint) {
+    const { model, size, volume } = await measureFile(file);
+    const geo = model.geometry;
     const box = geo.boundingBox;
     const c = box.getCenter(new THREE.Vector3());
     geo.translate(-c.x, -box.min.y, -c.z);
-    if (!geo.attributes.normal) geo.computeVertexNormals();
     if (this.mesh) {
       this.scene.remove(this.mesh);
       this.mesh.geometry.dispose();
-      this.mesh.material.dispose();
+      disposeMesh(this.mesh);
     }
-    this.mesh = new THREE.Mesh(geo, makePrintMaterial(hex));
-    this.mesh.material.userData.uniforms.uLayerFreq.value = 1; // una línea por mm
+    this.mesh = makeModelMesh(model, paint);
+    for (const m of this.mesh.material) m.userData.uniforms.uLayerFreq.value = 1; // una línea por mm
     this.scene.add(this.mesh);
     this.size = size;
     this.setScale(this.scale);
     this.frame();
-    return { size, volume };
+    return { size, volume, ownColors: hasOwnColors(model) };
   }
 
   setScale(s) {
@@ -651,7 +823,7 @@ export class UploadViewer {
     this.mesh?.scale.setScalar(s * MM);
   }
 
-  setColor(hex) { this.mesh?.material.color.set(hex); }
+  setPaint(paint) { if (this.mesh) paintMesh(this.mesh, paint); }
 
   fits(s = this.scale) {
     if (!this.size) return true;

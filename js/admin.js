@@ -2,13 +2,14 @@
 // Los cambios se guardan haciendo un commit al repositorio de GitHub con un token
 // que se almacena cifrado (AES-GCM, clave derivada de la contraseña con PBKDF2).
 import { GitHubRepo, bytesToBase64, base64ToBytes } from './github.js';
-import { ModalViewer, measureFile, registerLocalFile, webglAvailable, extOf } from './scenes.js';
+import { ModalViewer, measureFile, registerLocalFile, webglAvailable, extOf, loadModel, MODEL_EXTS, ORIGINAL } from './scenes.js';
 import { ICONS } from './icons.js';
 
 const SESSION_KEY = '3dw-admin';
 const PBKDF2_ITERATIONS = 600000;
 const MIN_PASSWORD = 12;
 const MAX_MODEL_MB = 50;
+const MAX_PARTS = 24; // más piezas que esto no se pueden personalizar una por una
 
 const state = {
   app: null,
@@ -313,7 +314,7 @@ function addNewCard(grid) {
   const b = document.createElement('button');
   b.type = 'button';
   b.className = 'card card-add';
-  b.innerHTML = `${ICONS.plus}<strong>Añadir modelo</strong><span>STL, OBJ o GLB</span>`;
+  b.innerHTML = `${ICONS.plus}<strong>Añadir modelo</strong><span>STL, 3MF, OBJ o GLB</span>`;
   b.addEventListener('click', () => itemEditor());
   grid.prepend(b);
 }
@@ -328,6 +329,21 @@ function removeItem(item) {
 
 /* ---------- Editor de modelos ---------- */
 
+/* Color de filamento más parecido a un color del archivo (distancia "redmean"). */
+function nearestColor(hex, colors) {
+  if (!hex) return null;
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const [r, g, b] = rgb(hex);
+  let best = null, bestD = Infinity;
+  for (const c of colors) {
+    const [r2, g2, b2] = rgb(c.hex);
+    const rm = (r + r2) / 2;
+    const dist = (2 + rm / 256) * (r - r2) ** 2 + 4 * (g - g2) ** 2 + (2 + (255 - rm) / 256) * (b - b2) ** 2;
+    if (dist < bestD) { bestD = dist; best = c; }
+  }
+  return best;
+}
+
 function itemEditor(item = null) {
   const { app } = state;
   const site = app.site;
@@ -335,6 +351,7 @@ function itemEditor(item = null) {
   const d = item?.dimensions || {};
   let model = item?.model || '';
   let viewer = null;
+  const mode0 = item ? app.colorMode(item) : 'single';
 
   const colorChecks = site.colors.map((c) => `
     <label class="check-swatch" title="${esc(c.name)}">
@@ -355,8 +372,8 @@ function itemEditor(item = null) {
             <div class="editor-empty" ${model ? 'hidden' : ''}>${ICONS.cube}<span>Sin archivo 3D</span></div>
           </div>
           <label class="btn btn-ghost btn-sm btn-block file-btn">${ICONS.upload}${item ? 'Reemplazar archivo 3D' : 'Elegir archivo 3D'}
-            <input type="file" name="file" accept=".stl,.obj,.glb" hidden></label>
-          <p class="hint" data-file-info>${model && !model.startsWith('procedural:') ? esc(model.split('/').pop()) : model ? 'Modelo de demostración' : `STL, OBJ o GLB · máx. ${MAX_MODEL_MB} MB`}</p>
+            <input type="file" name="file" accept="${MODEL_EXTS.map((e) => `.${e}`).join(',')}" hidden></label>
+          <p class="hint" data-file-info>${model && !model.startsWith('procedural:') ? esc(model.split('/').pop()) : model ? 'Modelo de demostración' : `STL, 3MF, OBJ o GLB · máx. ${MAX_MODEL_MB} MB`}</p>
         </div>
         <div class="editor-fields">
           <label class="field"><span class="field-label">Nombre *</span>
@@ -378,9 +395,18 @@ function itemEditor(item = null) {
           <label class="field"><span class="field-label">Tiempo de impresión</span>
             <input name="printTime" maxlength="30" value="${esc(item?.printTime)}" placeholder="Ej: 3 h"></label>
           <div class="field"><span class="field-label">Materiales</span><div class="checks">${matChecks}</div></div>
-          <div class="field"><span class="field-label">Colores disponibles</span><div class="checks">${colorChecks}</div></div>
+          <label class="field"><span class="field-label">Colores del modelo</span>
+            <select name="colorMode">
+              <option value="single" ${mode0 === 'single' ? 'selected' : ''}>Un color · el cliente lo elige</option>
+              <option value="parts" ${mode0 === 'parts' ? 'selected' : ''}>Multicolor · el cliente elige el color de cada pieza</option>
+              <option value="original" ${mode0 === 'original' ? 'selected' : ''}>Colores del diseño · fijos, como vienen en el archivo</option>
+            </select>
+            <span class="hint" data-mode-hint></span></label>
+          <div class="field" data-parts-field hidden><span class="field-label">Piezas <small>(nombre y color inicial)</small></span>
+            <ul class="part-list" data-parts></ul></div>
+          <div class="field" data-colors-field><span class="field-label" data-colors-label>Colores disponibles</span><div class="checks">${colorChecks}</div></div>
           <div class="field-row">
-            <label class="field"><span class="field-label">Color por defecto</span><select name="defaultColor"></select></label>
+            <label class="field" data-default-field><span class="field-label">Color por defecto</span><select name="defaultColor"></select></label>
             <label class="check big"><input type="checkbox" name="featured" ${item?.featured ? 'checked' : ''}>Destacar en la portada</label>
           </div>
         </div>
@@ -389,13 +415,63 @@ function itemEditor(item = null) {
       const canvas = form.querySelector('.editor-stage canvas');
       const empty = form.querySelector('.editor-empty');
       const info = form.querySelector('[data-file-info]');
-      const selectedHex = () => site.colors.find((c) => c.id === form.elements.defaultColor.value)?.hex || '#8d8f96';
+      const modeSel = form.elements.colorMode;
+      const partsList = form.querySelector('[data-parts]');
+      const modeHint = form.querySelector('[data-mode-hint]');
+      const colorHex = (id) => site.colors.find((c) => c.id === id)?.hex;
+      const currentPaint = () => {
+        if (modeSel.value === 'original') return ORIGINAL;
+        if (modeSel.value === 'parts') return [...partsList.querySelectorAll('select')].map((s) => colorHex(s.value));
+        return colorHex(form.elements.defaultColor.value) || '#8d8f96';
+      };
+      const repaint = () => viewer?.setPaint(currentPaint());
       if (webglAvailable()) viewer = new ModalViewer(canvas, { printDuration: 3 });
       const preview = () => {
         if (!viewer || !model) return;
         viewer.start();
-        viewer.show(model, selectedHex()).catch((err) => { info.textContent = `No se pudo mostrar: ${err.message}`; });
+        viewer.show(model, currentPaint()).then(repaint).catch((err) => { info.textContent = `No se pudo mostrar: ${err.message}`; });
       };
+
+      const syncMode = () => {
+        const mode = modeSel.value;
+        form.querySelector('[data-parts-field]').hidden = mode !== 'parts';
+        form.querySelector('[data-colors-field]').hidden = mode === 'original';
+        form.querySelector('[data-default-field]').hidden = mode !== 'single';
+        form.querySelector('[data-colors-label]').textContent = mode === 'parts' ? 'Colores que puede elegir el cliente' : 'Colores disponibles';
+        repaint();
+      };
+
+      // Ajusta las opciones de color a lo que trae el archivo. fresh = archivo recién subido.
+      const applyParts = (parts, fresh) => {
+        const own = parts.some((p) => p.color || p.map || p.vertexColors);
+        const multi = parts.length > 1 && parts.length <= MAX_PARTS;
+        modeSel.querySelector('[value="parts"]').disabled = !multi;
+        modeSel.querySelector('[value="original"]').disabled = !own;
+        const saved = !fresh && item?.parts?.length === parts.length ? item.parts : null;
+        partsList.innerHTML = multi ? parts.map((p, i) => {
+          const color = saved?.[i]?.color || nearestColor(p.color, site.colors)?.id || site.colors[i % site.colors.length]?.id;
+          return `<li class="part-edit">
+            <span class="part-orig" style="--c:${esc(p.color || 'transparent')}" title="${p.color ? 'Color que trae el archivo' : 'El archivo no trae color para esta pieza'}"></span>
+            <input type="text" value="${esc(saved?.[i]?.name || p.name)}" maxlength="40" aria-label="Nombre de la pieza ${i + 1}">
+            <select aria-label="Color inicial de la pieza ${i + 1}">${site.colors.map((c) => `<option value="${esc(c.id)}" ${c.id === color ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>
+          </li>`;
+        }).join('') : '';
+        if (fresh) modeSel.value = multi ? 'parts' : own ? 'original' : 'single';
+        if (modeSel.selectedOptions[0]?.disabled) modeSel.value = 'single';
+        const count = parts.length === 1 ? '1 pieza' : `${parts.length} piezas`;
+        modeHint.textContent = parts.length > MAX_PARTS
+          ? `El archivo tiene ${count}: demasiadas para elegir el color de cada una.`
+          : `El archivo tiene ${count}${own ? ' con colores propios' : ' y no trae colores'}.`;
+        syncMode();
+      };
+      partsList.addEventListener('change', repaint);
+      modeSel.addEventListener('change', syncMode);
+      if (model) {
+        modeHint.textContent = 'Leyendo piezas del modelo…';
+        loadModel(model).then((m) => applyParts(m.parts, false)).catch(() => { modeHint.textContent = ''; });
+      } else {
+        modeHint.textContent = 'Sube el archivo para ver sus piezas y colores.';
+      }
 
       const syncDefault = () => {
         const checked = [...form.querySelectorAll('input[name="colors"]:checked')].map((i) => i.value);
@@ -404,22 +480,23 @@ function itemEditor(item = null) {
         const bright = list.find((c) => parseInt(c.hex.slice(1, 3), 16) + parseInt(c.hex.slice(3, 5), 16) + parseInt(c.hex.slice(5, 7), 16) > 270);
         const current = form.elements.defaultColor.value || item?.defaultColor || bright?.id;
         form.elements.defaultColor.innerHTML = list.map((c) => `<option value="${esc(c.id)}" ${c.id === current ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
-        viewer?.setColor(selectedHex());
+        repaint();
       };
       form.querySelectorAll('input[name="colors"]').forEach((i) => i.addEventListener('change', syncDefault));
-      form.elements.defaultColor.addEventListener('change', () => viewer?.setColor(selectedHex()));
+      form.elements.defaultColor.addEventListener('change', repaint);
       syncDefault();
+      syncMode();
       preview();
 
       form.elements.file.addEventListener('change', async () => {
         const file = form.elements.file.files[0];
         if (!file) return;
         const ext = extOf(file.name);
-        if (!['stl', 'obj', 'glb'].includes(ext)) { info.textContent = 'Formato no soportado. Usa STL, OBJ o GLB.'; return; }
+        if (!MODEL_EXTS.includes(ext)) { info.textContent = 'Formato no soportado. Usa STL, 3MF, OBJ o GLB.'; return; }
         if (file.size > MAX_MODEL_MB * 1024 * 1024) { info.textContent = `El archivo supera ${MAX_MODEL_MB} MB.`; return; }
         info.textContent = 'Leyendo archivo…';
         try {
-          const { size } = await measureFile(file);
+          const { size, model: parsed } = await measureFile(file);
           const r = (v) => Math.round(v * 10) / 10;
           form.elements.w.value = r(size.x);
           form.elements.d.value = r(size.z);
@@ -433,6 +510,7 @@ function itemEditor(item = null) {
           if (!form.elements.name.value) form.elements.name.value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
           info.textContent = `${file.name} · ${(file.size / 1048576).toFixed(1)} MB · medidas calculadas`;
           empty.hidden = true;
+          applyParts(parsed.parts, true);
           preview();
         } catch (err) {
           console.warn(err);
@@ -453,6 +531,12 @@ function itemEditor(item = null) {
       const num = (v) => (v.value === '' ? 0 : Math.max(0, Number(v.value)) || 0);
       const colors = [...form.querySelectorAll('input[name="colors"]:checked')].map((i) => i.value);
       const materials = [...form.querySelectorAll('input[name="materials"]:checked')].map((i) => i.value);
+      const colorMode = f.colorMode.value;
+      const parts = [...form.querySelectorAll('.part-edit')].map((row, i) => ({
+        name: row.querySelector('input').value.trim() || `Pieza ${i + 1}`,
+        color: row.querySelector('select').value,
+      }));
+      if (colorMode === 'parts' && !parts.length) throw new Error('Espera a que se lean las piezas del archivo.');
       const data = {
         id: item?.id || uniqueId(slug(name), site.items.map((i) => i.id)),
         name,
@@ -464,6 +548,8 @@ function itemEditor(item = null) {
         materials: materials.length === site.materials.length ? [] : materials,
         colors: colors.length === site.colors.length ? [] : colors,
         defaultColor: f.defaultColor.value,
+        ...(colorMode !== 'single' && { colorMode }),
+        ...(colorMode === 'parts' && { parts }),
         featured: f.featured.checked,
         model,
       };
@@ -517,6 +603,7 @@ function colorsEditor() {
       for (const item of app.site.items) {
         item.colors = (item.colors || []).filter((id) => ids.includes(id));
         if (!ids.includes(item.defaultColor)) item.defaultColor = '';
+        for (const p of item.parts || []) if (!ids.includes(p.color)) p.color = '';
       }
       markDirty();
     },
