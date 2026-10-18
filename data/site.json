@@ -117,243 +117,94 @@
   ],
   "items": [
     {
-      "id": "cuno1",
-      "name": "cuno1",
-      "category": "General",
+      "id": "skadis-cuadrado",
+      "name": "Skadis Cuadrado",
+      "category": "Skadis",
       "description": "",
       "price": null,
       "dimensions": {
-        "w": 1.1,
-        "d": 0.2,
-        "h": 0.1
+        "w": 422,
+        "d": 220,
+        "h": 18.6
       },
       "printTime": "",
-      "materials": [],
-      "colors": [],
-      "defaultColor": "rojo",
-      "featured": false,
-      "model": "models/cuno1-mv1nzuy1.stl"
-    },
-    {
-      "id": "cohete-multicolor",
-      "name": "Cohete multicolor",
-      "category": "Juegos",
-      "description": "Se imprime en cuatro colores. Elige el color de cada pieza: cuerpo, punta y aletas, ventanas y tobera.",
-      "price": null,
-      "dimensions": {
-        "w": 113,
-        "d": 113,
-        "h": 180
-      },
-      "printTime": "6 h",
-      "materials": [],
-      "colors": [],
-      "defaultColor": "blanco",
-      "colorMode": "parts",
-      "parts": [
-        {
-          "name": "Cuerpo",
-          "color": "blanco"
-        },
-        {
-          "name": "Punta y aletas",
-          "color": "rojo"
-        },
-        {
-          "name": "Ventanas",
-          "color": "azul"
-        },
-        {
-          "name": "Tobera",
-          "color": "gris"
-        }
-      ],
-      "featured": true,
-      "model": "procedural:rocket"
-    },
-    {
-      "id": "jarron-espiral",
-      "name": "Jarrón Espiral",
-      "category": "Decoración",
-      "description": "Paredes onduladas que giran mientras suben. Se imprime en modo espiral: una sola línea continua de filamento.",
-      "price": null,
-      "dimensions": {
-        "w": 110,
-        "d": 110,
-        "h": 160
-      },
-      "printTime": "5 h",
       "materials": [
-        "PLA",
-        "PETG"
-      ],
-      "colors": [],
-      "defaultColor": "rojo",
-      "featured": true,
-      "model": "procedural:twistVase"
-    },
-    {
-      "id": "maceta-facetada",
-      "name": "Maceta Facetada",
-      "category": "Decoración",
-      "description": "Maceta low-poly de siete caras para suculentas y cactus pequeños.",
-      "price": null,
-      "dimensions": {
-        "w": 100,
-        "d": 100,
-        "h": 68
-      },
-      "printTime": "4 h",
-      "materials": [
-        "PLA",
-        "PETG"
-      ],
-      "colors": [
-        "blanco",
-        "gris",
-        "negro",
-        "verde",
-        "rosa"
-      ],
-      "defaultColor": "blanco",
-      "featured": false,
-      "model": "procedural:facetedPot"
-    },
-    {
-      "id": "escultura-nudo",
-      "name": "Escultura Nudo",
-      "category": "Decoración",
-      "description": "Un nudo toroidal continuo, imposible de fabricar de otra forma. Pieza de escritorio que llama la atención.",
-      "price": null,
-      "dimensions": {
-        "w": 90,
-        "d": 40,
-        "h": 90
-      },
-      "printTime": "6 h",
-      "materials": [
-        "PLA"
-      ],
-      "colors": [],
-      "defaultColor": "gris",
-      "featured": true,
-      "model": "procedural:knot"
-    },
-    {
-      "id": "engranaje",
-      "name": "Engranaje Decorativo",
-      "category": "Mecánica",
-      "description": "Engranaje de 14 dientes con agujeros de aligeramiento. Sirve como pieza decorativa o como base para un mecanismo.",
-      "price": null,
-      "dimensions": {
-        "w": 80,
-        "d": 13,
-        "h": 80
-      },
-      "printTime": "2 h",
-      "materials": [
-        "PLA",
         "PETG"
       ],
       "colors": [
         "negro",
-        "rojo",
-        "gris",
-        "blanco",
-        "amarillo"
+        "blanco"
       ],
       "defaultColor": "negro",
-      "featured": true,
-      "model": "procedural:gear"
+      "featured": false,
+      "model": "models/skadis220x220-wallmount-mvd9falt.3mf"
     },
     {
-      "id": "soporte-celular",
-      "name": "Soporte para Celular",
-      "category": "Utilidad",
-      "description": "Soporte inclinado para ver videos o hacer videollamadas con las manos libres. Funciona con funda.",
+      "id": "organizador-de-mandos-a-distancia",
+      "name": "Organizador de mandos a distancia",
+      "category": "Organizacion en la casa",
+      "description": "Mantén los mandos a distancia de tu televisor en un mismo lugar con este organizador duradero y fácil de usar. Puedes colocarlo sobre un escritorio, una mesa de centro o una mesita de noche; mantiene los mandos en posición vertical y perfectamente visibles.",
       "price": null,
       "dimensions": {
-        "w": 80,
-        "d": 75,
+        "w": 60,
+        "d": 95,
         "h": 70
       },
-      "printTime": "3 h",
-      "materials": [
-        "PLA",
-        "PETG"
-      ],
-      "colors": [],
-      "defaultColor": "negro",
-      "featured": false,
-      "model": "procedural:phoneStand"
-    },
-    {
-      "id": "organizador-hexagonal",
-      "name": "Organizador Hexagonal",
-      "category": "Utilidad",
-      "description": "Panal de siete celdas de distintas alturas para lápices, pinceles o herramientas.",
-      "price": null,
-      "dimensions": {
-        "w": 140,
-        "d": 130,
-        "h": 100
-      },
-      "printTime": "9 h",
-      "materials": [
-        "PLA",
-        "PETG"
-      ],
-      "colors": [],
-      "defaultColor": "gris",
-      "featured": true,
-      "model": "procedural:hexOrganizer"
-    },
-    {
-      "id": "llavero-corazon",
-      "name": "Llavero Corazón",
-      "category": "Accesorios",
-      "description": "Llavero con forma de corazón. Ideal para regalos, recuerdos de eventos o pedidos por cantidad.",
-      "price": null,
-      "dimensions": {
-        "w": 45,
-        "d": 8,
-        "h": 40
-      },
-      "printTime": "30 min",
-      "materials": [
-        "PLA",
-        "TPU"
-      ],
-      "colors": [
-        "rojo",
-        "rosa",
-        "morado",
-        "blanco",
-        "negro"
-      ],
-      "defaultColor": "rojo",
-      "featured": false,
-      "model": "procedural:heartKeychain"
-    },
-    {
-      "id": "dado-d20",
-      "name": "Dado D20",
-      "category": "Juegos",
-      "description": "Dado de veinte caras para juegos de rol y de mesa.",
-      "price": null,
-      "dimensions": {
-        "w": 25,
-        "d": 25,
-        "h": 25
-      },
-      "printTime": "40 min",
+      "printTime": "",
       "materials": [
         "PLA"
       ],
-      "colors": [],
-      "defaultColor": "morado",
+      "colors": [
+        "negro",
+        "blanco"
+      ],
+      "defaultColor": "blanco",
       "featured": false,
-      "model": "procedural:d20"
+      "model": "models/remote-holder-mvd9ac96.3mf"
+    },
+    {
+      "id": "pedestal-para-skadis",
+      "name": "Pedestal Para Skadis",
+      "category": "Skadis",
+      "description": "Pedestal para Skadis perfecto para organizar todo tipo de cosas o para decorar",
+      "price": null,
+      "dimensions": {
+        "w": 17.4,
+        "d": 89,
+        "h": 159.8
+      },
+      "printTime": "",
+      "materials": [
+        "PETG"
+      ],
+      "colors": [
+        "negro",
+        "blanco"
+      ],
+      "defaultColor": "blanco",
+      "featured": false,
+      "model": "models/skadis-podest-160-mvd96wvr.3mf"
+    },
+    {
+      "id": "skadis-hexagonal",
+      "name": "Skadis Hexagonal",
+      "category": "Skadis",
+      "description": "es un sistema de organización modular de pared, ideal para mantener espacios como el cuarto, oficina, cocina o taller ordenados.",
+      "price": null,
+      "dimensions": {
+        "w": 254,
+        "d": 220,
+        "h": 10
+      },
+      "printTime": "",
+      "materials": [
+        "PETG"
+      ],
+      "colors": [],
+      "defaultColor": "rojo",
+      "colorMode": "original",
+      "featured": true,
+      "model": "models/skadis-hex-board-v2-mvd920qs.3mf"
     }
   ]
 }
