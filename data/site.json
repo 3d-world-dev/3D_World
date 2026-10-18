@@ -117,6 +117,48 @@
   ],
   "items": [
     {
+      "id": "organizador-de-escritorio-moduar",
+      "name": "Organizador de escritorio Moduar",
+      "category": "Organizacion en la casa",
+      "description": "",
+      "price": null,
+      "dimensions": {
+        "w": 464.1,
+        "d": 415.8,
+        "h": 94
+      },
+      "printTime": "",
+      "materials": [
+        "PLA"
+      ],
+      "colors": [],
+      "defaultColor": "rojo",
+      "colorMode": "original",
+      "featured": false,
+      "model": "models/modular-desk-organizer-base-mvdai32t.3mf"
+    },
+    {
+      "id": "porta-gorras-para-pared",
+      "name": "Porta Gorras para pared",
+      "category": "Organizacion en la casa",
+      "description": "",
+      "price": null,
+      "dimensions": {
+        "w": 157,
+        "d": 164.2,
+        "h": 64.5
+      },
+      "printTime": "",
+      "materials": [
+        "PLA"
+      ],
+      "colors": [],
+      "defaultColor": "rojo",
+      "colorMode": "original",
+      "featured": false,
+      "model": "models/cap-holder-mvdaestz.3mf"
+    },
+    {
       "id": "porta-llaves-hexagonal",
       "name": "Porta llaves Hexagonal",
       "category": "Organizacion en la casa",
