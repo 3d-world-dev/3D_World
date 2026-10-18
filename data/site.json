@@ -117,6 +117,98 @@
   ],
   "items": [
     {
+      "id": "porta-llaves-hexagonal",
+      "name": "Porta llaves Hexagonal",
+      "category": "Organizacion en la casa",
+      "description": "",
+      "price": null,
+      "dimensions": {
+        "w": 224.2,
+        "d": 199.5,
+        "h": 92
+      },
+      "printTime": "",
+      "materials": [
+        "PLA"
+      ],
+      "colors": [
+        "negro",
+        "blanco"
+      ],
+      "defaultColor": "negro",
+      "featured": false,
+      "model": "models/hex-shelf-v2-mvda9of9.3mf"
+    },
+    {
+      "id": "organizador-de-zapatos",
+      "name": "Organizador de Zapatos",
+      "category": "Organizacion en la casa",
+      "description": "",
+      "price": null,
+      "dimensions": {
+        "w": 435.3,
+        "d": 250.1,
+        "h": 150
+      },
+      "printTime": "",
+      "materials": [
+        "PLA"
+      ],
+      "colors": [
+        "negro",
+        "morado"
+      ],
+      "defaultColor": "negro",
+      "featured": false,
+      "model": "models/shoe-rack-shelf-with-wall-mount-updated--mvda7iwg.3mf"
+    },
+    {
+      "id": "porta-audifonos-skadis",
+      "name": "Porta Audifonos Skadis",
+      "category": "Skadis",
+      "description": "",
+      "price": null,
+      "dimensions": {
+        "w": 56.9,
+        "d": 39.4,
+        "h": 51.2
+      },
+      "printTime": "",
+      "materials": [
+        "PETG"
+      ],
+      "colors": [
+        "negro",
+        "blanco"
+      ],
+      "defaultColor": "negro",
+      "featured": false,
+      "model": "models/skadis-headphone2-mvda6jfg.3mf"
+    },
+    {
+      "id": "porta-moviles-de-skadis",
+      "name": "Porta moviles de Skadis",
+      "category": "Skadis",
+      "description": "",
+      "price": null,
+      "dimensions": {
+        "w": 76,
+        "d": 70,
+        "h": 81
+      },
+      "printTime": "",
+      "materials": [
+        "PETG"
+      ],
+      "colors": [
+        "negro",
+        "blanco"
+      ],
+      "defaultColor": "negro",
+      "featured": false,
+      "model": "models/skadis-phone-holder-mvda5hle.3mf"
+    },
+    {
       "id": "skadis-cuadrado",
       "name": "Skadis Cuadrado",
       "category": "Skadis",
