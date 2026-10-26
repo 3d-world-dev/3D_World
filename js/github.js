@@ -65,6 +65,14 @@ export class GitHubRepo {
     }
   }
 
+  /* Rutas de todos los archivos que hay ahora en la rama. */
+  async listPaths() {
+    const ref = await this.req(`${this.base}/git/ref/heads/${encodeURIComponent(this.branch)}`);
+    const commit = await this.req(`${this.base}/git/commits/${ref.object.sha}`);
+    const tree = await this.req(`${this.base}/git/trees/${commit.tree.sha}?recursive=1`);
+    return new Set(tree.tree.map((t) => t.path));
+  }
+
   /*
    * Un solo commit con varios archivos nuevos/modificados y borrados.
    * files: [{ path, content: string | Blob | ArrayBuffer }], deletions: [path]

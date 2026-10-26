@@ -205,24 +205,6 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 .fx-add strong { font: 700 1.05rem/1 var(--display); color: var(--text); }
 .fx-body .admin-tools { margin-bottom: 6px; }
 
-.photo-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.photo-list:empty { display: none; }
-.photo-item { position: relative; aspect-ratio: 4 / 5; border-radius: 12px; overflow: hidden; background: var(--surface-3); border: 1px solid var(--line-2); }
-.photo-item img { width: 100%; height: 100%; object-fit: cover; }
-.photo-cover { position: absolute; top: 6px; left: 6px; padding: 3px 8px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 0.68rem; font-weight: 700; }
-.photo-tools { position: absolute; inset: auto 0 0; display: flex; justify-content: center; gap: 4px; padding: 6px; background: linear-gradient(transparent, rgba(5, 3, 12, 0.85)); }
-.photo-tools .icon-btn { width: 30px; height: 30px; background: rgba(11, 8, 22, 0.7); font-size: 1.1rem; line-height: 1; }
-.photo-tools .icon-btn:disabled { opacity: 0.35; cursor: default; }
-.photo-tools .icon-btn svg { width: 14px; height: 14px; }
-.photo-drop {
-  display: grid; justify-items: center; gap: 6px; padding: 26px 16px; border-radius: var(--radius-sm); border: 2px dashed var(--line-2);
-  color: var(--muted); text-align: center; cursor: pointer; transition: border-color 0.2s, color 0.2s, background-color 0.2s;
-}
-.photo-drop:hover, .photo-drop.drag { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-.photo-drop svg { width: 30px; height: 30px; }
-.photo-drop strong { color: var(--text); }
-.photo-drop span { font-size: 0.8rem; }
-
 /* ---------- Responsive ---------- */
 @media (max-width: 960px) {
   .fx-hero { padding: 24px 0 90px; }
@@ -246,7 +228,6 @@ h1, h2, h3 { letter-spacing: -0.01em; }
   .fx-steps { grid-template-columns: 1fr; }
   .lb-info h3 { font-size: 1.35rem; }
   .lb-nav { width: 38px; height: 38px; }
-  .photo-list { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (prefers-reduced-motion: reduce) {

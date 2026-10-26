@@ -21,11 +21,13 @@ js/model3mf.js      Lector de 3MF (piezas, colores y filamentos de Bambu/Orca/Pr
 js/admin.js         Panel de administración: acceso, sesión y publicación (solo se carga al activarlo)
 js/admin-catalog.js Editores del catálogo 3D (página principal)
 js/admin-figuras.js Editores de la galería de figuras (solo fotos)
+js/admin-photos.js  Subida y optimización de fotos (figuras y fotos del resultado)
 figuras/index.html  Vista de figuras pintadas
 css/figuras.css     Tema neón de la vista de figuras
 js/figuras.js       Lógica de la vista de figuras
 data/figuras.json   Contenido de la galería de figuras
-images/figuras/     Fotos subidas desde el panel
+images/figuras/     Fotos de figuras subidas desde el panel
+images/modelos/     Fotos del resultado de los modelos 3D
 js/github.js        Publicación de cambios vía API de GitHub
 data/site.json      TODO el contenido editable (catálogo, colores, contacto…)
 data/admin.json     Se crea al configurar el panel (token cifrado)
@@ -73,6 +75,7 @@ En VS Code también puedes usar la extensión **Live Server** (clic derecho en `
 - Barra inferior: **+ Modelo**, **Colores**, **Datos** (nombre, WhatsApp, Instagram, email, ubicación, horario, moneda), **Publicar** y **Salir**.
 - Cada tarjeta muestra **Editar** y **Eliminar**.
 - Al subir un archivo 3D (STL, 3MF, OBJ o GLB), las medidas se calculan solas (en mm).
+- **Fotos del resultado** (opcional, hasta 6 por modelo): fotos reales de la pieza ya impresa. Se optimizan solas (WebP) y se guardan en `images/modelos/`. Si un modelo tiene fotos, **la foto es su imagen principal**: la tarjeta muestra la foto (la segunda al pasar el mouse) y la ficha abre en *Foto real*; el 3D queda como opción (botón *Ver en 3D* o pestaña *Modelo 3D*) y su archivo solo se descarga cuando alguien lo pide. Los modelos sin fotos se ven en 3D como siempre.
 - **Colores del modelo**: cada modelo tiene uno de tres modos.
   - *Un color*: el cliente elige un color de filamento.
   - *Multicolor*: el panel detecta las piezas del archivo; puedes renombrarlas y darles un color inicial. El cliente elige el color de cada pieza y el mensaje de WhatsApp las lista.

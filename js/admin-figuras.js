@@ -1,13 +1,10 @@
 // Editores de la vista /figuras/ (galería de fotos). Lo carga el panel (admin.js).
-// Aquí solo se suben imágenes: se reducen y convierten a WebP en el navegador antes de publicarlas.
+// Aquí solo se suben imágenes (ver admin-photos.js).
 import { state, dialog, esc, slug, uniqueId, markDirty } from './admin.js';
 import { ICONS } from './icons.js';
+import { photoFieldHtml, mountPhotoField, photoFiles } from './admin-photos.js';
 
 const MAX_PHOTOS = 12;
-const MAX_INPUT_MB = 30;
-const FULL_SIDE = 1600; // lado mayor de la foto que se ve en el visor
-const THUMB_SIDE = 640; // lado mayor de la miniatura de la galería
-const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif'];
 
 export function install() {
   return {
@@ -18,8 +15,7 @@ export function install() {
     decorateCard,
     afterGrid: addNewCard,
     // Fotos subidas que usa la galería (las que dejen de usarse se borran al publicar).
-    files: (figs) => (figs.items || []).flatMap((i) => (i.photos || []).flatMap((p) => [p.src, p.thumb]))
-      .filter((p) => p?.startsWith('images/')),
+    files: (figs) => (figs.items || []).flatMap((i) => photoFiles(i.photos)),
   };
 }
 
@@ -50,45 +46,6 @@ function addNewCard(grid) {
   grid.prepend(b);
 }
 
-/* ---------- Fotos ---------- */
-
-async function encode(bitmap, side, quality) {
-  const k = Math.min(1, side / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * k), h = Math.round(bitmap.height * k);
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(bitmap, 0, 0, w, h);
-  const toBlob = (type) => new Promise((r) => canvas.toBlob(r, type, quality));
-  let blob = await toBlob('image/webp');
-  // Safari antiguo no sabe generar WebP: se usa JPG.
-  if (!blob || blob.type !== 'image/webp') blob = await toBlob('image/jpeg');
-  return { blob, w, h, ext: blob.type === 'image/webp' ? 'webp' : 'jpg' };
-}
-
-/* Convierte una foto subida en dos archivos listos para publicar (grande y miniatura). */
-async function preparePhoto(file, base) {
-  if (file.size > MAX_INPUT_MB * 1024 * 1024) throw new Error(`"${file.name}" pesa más de ${MAX_INPUT_MB} MB.`);
-  let bitmap;
-  try {
-    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
-  } catch {
-    throw new Error(`No se pudo leer "${file.name}". Usa fotos JPG, PNG o WebP.`);
-  }
-  const full = await encode(bitmap, FULL_SIDE, 0.86);
-  const thumb = await encode(bitmap, THUMB_SIDE, 0.8);
-  bitmap.close?.();
-  const id = `${base}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-  const photo = { src: `images/figuras/${id}.${full.ext}`, thumb: `images/figuras/${id}-sm.${thumb.ext}`, w: full.w, h: full.h };
-  for (const [path, { blob }] of [[photo.src, full], [photo.thumb, thumb]]) {
-    state.pending.set(path, blob);
-    state.app.localFiles.set(path, URL.createObjectURL(blob));
-  }
-  return photo;
-}
-
 /* ---------- Editor de figura ---------- */
 
 function figureEditor(item = null) {
@@ -104,12 +61,7 @@ function figureEditor(item = null) {
     html: `
       <div class="editor-grid">
         <div class="editor-preview">
-          <ul class="photo-list" data-photos></ul>
-          <label class="photo-drop" data-drop>
-            ${ICONS.upload}<strong>Añadir fotos</strong><span>Arrastra aquí o toca para elegir · hasta ${MAX_PHOTOS}</span>
-            <input type="file" name="photos" accept="${IMAGE_TYPES.join(',')}" multiple hidden>
-          </label>
-          <p class="hint" data-photo-info>La primera foto es la portada. Se reducen y optimizan solas antes de publicar.</p>
+          ${photoFieldHtml({ max: MAX_PHOTOS, hint: 'La primera foto es la portada. Se reducen y optimizan solas antes de publicar.' })}
         </div>
         <div class="editor-fields">
           <label class="field"><span class="field-label">Nombre *</span>
@@ -131,58 +83,9 @@ function figureEditor(item = null) {
         </div>
       </div>`,
     onOpen(form) {
-      const list = form.querySelector('[data-photos]');
-      const info = form.querySelector('[data-photo-info]');
-      const input = form.elements.photos;
-      const drop = form.querySelector('[data-drop]');
-
-      const draw = () => {
-        list.innerHTML = photos.map((p, i) => `
-          <li class="photo-item">
-            <img src="${esc(app.fileUrl(p.thumb || p.src))}" alt="Foto ${i + 1}">
-            ${i === 0 ? '<span class="photo-cover">Portada</span>' : ''}
-            <div class="photo-tools">
-              <button type="button" class="icon-btn" data-move="-1" data-i="${i}" aria-label="Mover antes" ${i === 0 ? 'disabled' : ''}>‹</button>
-              <button type="button" class="icon-btn" data-move="1" data-i="${i}" aria-label="Mover después" ${i === photos.length - 1 ? 'disabled' : ''}>›</button>
-              <button type="button" class="icon-btn" data-remove="${i}" aria-label="Quitar foto">${ICONS.trash}</button>
-            </div>
-          </li>`).join('');
-        drop.hidden = photos.length >= MAX_PHOTOS;
-      };
-      list.addEventListener('click', (e) => {
-        const move = e.target.closest('[data-move]');
-        const remove = e.target.closest('[data-remove]');
-        if (move) {
-          const i = Number(move.dataset.i), j = i + Number(move.dataset.move);
-          [photos[i], photos[j]] = [photos[j], photos[i]];
-        }
-        if (remove) photos.splice(Number(remove.dataset.remove), 1);
-        draw();
+      mountPhotoField(form.querySelector('.editor-preview'), photos, {
+        max: MAX_PHOTOS, folder: 'images/figuras', baseName: () => slug(form.elements.name.value) || 'figura',
       });
-
-      const add = async (files) => {
-        const room = MAX_PHOTOS - photos.length;
-        const list = [...files].filter((f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|avif|heic|heif)$/i.test(f.name)).slice(0, room);
-        if (!list.length) { info.textContent = 'Solo se pueden subir imágenes (JPG, PNG o WebP).'; return; }
-        const base = slug(form.elements.name.value) || 'figura';
-        let done = 0;
-        for (const f of list) {
-          info.textContent = `Optimizando foto ${++done} de ${list.length}…`;
-          try {
-            photos.push(await preparePhoto(f, base));
-            draw();
-          } catch (err) {
-            info.textContent = err.message;
-            return;
-          }
-        }
-        info.textContent = files.length > room ? `Solo se añadieron ${room}: el máximo es ${MAX_PHOTOS} fotos por figura.` : 'Fotos listas. La primera es la portada.';
-      };
-      input.addEventListener('change', () => { add(input.files); input.value = ''; });
-      ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('drag'); }));
-      ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('drag'); }));
-      drop.addEventListener('drop', (e) => add(e.dataTransfer.files));
-      draw();
     },
     async onSubmit(form) {
       const f = form.elements;

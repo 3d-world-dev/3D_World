@@ -260,7 +260,7 @@
     <div class="modal-backdrop" data-close></div>
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="m-title">
       <button class="icon-btn modal-close" data-close type="button" aria-label="Cerrar"><span class="ico" data-icon="close"></span></button>
-      <div class="modal-stage">
+      <div class="modal-stage" id="m-stage">
         <canvas id="modal-canvas"></canvas>
         <div class="stage-tools">
           <button class="chip-btn" id="m-print" type="button"><span class="ico" data-icon="play"></span>Ver impresión</button>
@@ -268,6 +268,17 @@
           <button class="chip-btn" id="m-rotate" type="button" aria-pressed="true"><span class="ico" data-icon="rotate"></span>Auto-giro</button>
         </div>
         <p class="drag-hint">Arrastra para girar · rueda o pellizca para zoom</p>
+        <!-- Fotos del resultado final (si el modelo tiene) -->
+        <div class="stage-photo" id="m-photo" hidden>
+          <img id="m-photo-img" alt="">
+          <button class="photo-nav prev" id="m-photo-prev" type="button" aria-label="Foto anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+          <button class="photo-nav next" id="m-photo-next" type="button" aria-label="Foto siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+          <p class="photo-counter" id="m-photo-counter"></p>
+        </div>
+        <div class="stage-tabs" id="m-tabs" role="tablist" aria-label="Vista" hidden>
+          <button type="button" role="tab" data-view="photo" aria-selected="true"><span class="ico" data-icon="camera"></span>Foto real</button>
+          <button type="button" role="tab" data-view="3d" aria-selected="false"><span class="ico" data-icon="cube"></span>Modelo 3D</button>
+        </div>
       </div>
       <div class="modal-info">
         <p class="eyebrow" id="m-cat"></p>

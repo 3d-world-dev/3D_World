@@ -15,6 +15,7 @@ const app = {
   hero: null,
   cards: [],
   hooks: {},
+  localFiles: new Map(), // fotos que el dueño aún no publicó: ruta en el repo -> URL blob
   state: { filter: 'all', query: '' },
   // Qué edita el panel en esta vista (ver admin.js).
   admin: {
@@ -35,6 +36,8 @@ function fillIcons(root = document) {
     el.dataset.filled = '1';
   }
 }
+
+const fileUrl = (path) => app.localFiles.get(path) || path;
 
 function waLink(text) {
   const number = String(app.site.contact.whatsapp || '').replace(/\D/g, '');
@@ -236,13 +239,19 @@ function renderCatalog() {
 
 function buildCard(item) {
   const card = { item, ...defaultSelection(item), material: itemMaterials(item)[0] };
+  // Con fotos del resultado, la tarjeta muestra la foto y el 3D queda para el botón "Ver en 3D".
+  const photos = item.photos || [];
+  const img = (p, cls) => `<img class="${cls}" src="${esc(fileUrl(p.thumb || p.src))}" alt="${cls === 'card-photo' ? esc(item.name) : ''}" loading="lazy" decoding="async">`;
   const el = document.createElement('article');
   el.className = 'card';
   el.dataset.id = item.id;
   el.innerHTML = `
-    <button class="card-view" type="button" aria-label="Ver ${esc(item.name)} en 3D">
+    <button class="card-view${photos.length ? ' has-photo' : ''}" type="button" aria-label="${photos.length ? `Ver fotos de ${esc(item.name)}` : `Ver ${esc(item.name)} en 3D`}">
       <span class="loader" aria-hidden="true"></span>
       <span class="card-fallback" aria-hidden="true">${ICONS.cube}</span>
+      ${photos[0] ? img(photos[0], 'card-photo') : ''}
+      ${photos[1] ? img(photos[1], 'card-photo card-photo-alt') : ''}
+      ${photos.length > 1 ? `<span class="card-photo-count">${photos.length} fotos</span>` : ''}
       ${item.featured ? '<span class="badge">Destacado</span>' : ''}
     </button>
     <div class="card-body">
@@ -282,8 +291,8 @@ function buildCard(item) {
   }
   card.updateLink();
   view.addEventListener('click', () => openModal(item, card));
-  $('[data-open]', el).addEventListener('click', () => openModal(item, card));
-  if (app.grid) card.handle = app.grid.add(view, item.model, itemPaint(item, card));
+  $('[data-open]', el).addEventListener('click', () => openModal(item, card, { view: '3d' }));
+  if (app.grid && !photos.length) card.handle = app.grid.add(view, item.model, itemPaint(item, card));
   app.hooks.decorateCard?.(el, item);
   $('#grid').append(el);
   return card;
@@ -331,7 +340,8 @@ function setupFilters() {
 let modalViewer = null;
 let modalState = null;
 
-function openModal(item, card = app.cards.find((c) => c.item === item)) {
+/* view: 'auto' (la foto si hay, si no el 3D), 'photo' o '3d'. */
+function openModal(item, card = app.cards.find((c) => c.item === item), { view = 'auto' } = {}) {
   const modal = $('#modal');
   const sel = card || defaultSelection(item);
   modalState = {
@@ -339,7 +349,12 @@ function openModal(item, card = app.cards.find((c) => c.item === item)) {
     color: sel.color,
     parts: sel.parts.slice(),
     material: card?.material || itemMaterials(item)[0],
+    photoIndex: 0,
+    modelShown: false,
   };
+  const hasPhotos = !!item.photos?.length;
+  $('#m-stage').classList.toggle('has-photos', hasPhotos);
+  $('#m-tabs').hidden = !hasPhotos || !app.scenes; // sin 3D solo hay fotos: no hace falta elegir
   $('#m-cat').textContent = item.category || '';
   $('#m-title').textContent = item.name;
   $('#m-desc').textContent = item.description || '';
@@ -366,14 +381,48 @@ function openModal(item, card = app.cards.find((c) => c.item === item)) {
   }
   $('.modal-close', modal).focus({ preventScroll: true });
 
-  if (app.scenes) {
-    modalViewer ??= new app.scenes.ModalViewer($('#modal-canvas'));
-    modalViewer.start();
-    modalViewer.show(item.model, itemPaint(item, modalState)).catch((err) => {
-      console.warn(err);
-      toast('No se pudo cargar el modelo 3D.', 'error');
-    });
+  setModalView(hasPhotos && (view !== '3d' || !app.scenes) ? 'photo' : '3d');
+}
+
+/* El modelo 3D se descarga solo cuando hace falta verlo (si hay fotos, puede que nadie lo pida). */
+function showModalModel() {
+  if (!app.scenes || modalState.modelShown) return;
+  modalState.modelShown = true;
+  const { item } = modalState;
+  modalViewer ??= new app.scenes.ModalViewer($('#modal-canvas'));
+  modalViewer.show(item.model, itemPaint(item, modalState)).catch((err) => {
+    console.warn(err);
+    if (modalState.item !== item) return;
+    if (item.photos?.length) setModalView('photo');
+    else toast('No se pudo cargar el modelo 3D.', 'error');
+  });
+}
+
+/* Cambia el escenario de la ficha entre el modelo 3D y las fotos del resultado. */
+function setModalView(view) {
+  modalState.view = view;
+  $('#m-stage').classList.toggle('show-photo', view === 'photo');
+  $('#m-photo').hidden = view !== 'photo';
+  $$('#m-tabs [data-view]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.view === view)));
+  if (view === 'photo') {
+    modalViewer?.stop(); // no tiene sentido dibujar el 3D mientras no se ve
+    showModalPhoto(modalState.photoIndex);
+  } else {
+    showModalModel();
+    modalViewer?.start();
   }
+}
+
+function showModalPhoto(i) {
+  const photos = modalState.item.photos || [];
+  if (!photos.length) return;
+  modalState.photoIndex = (i + photos.length) % photos.length;
+  const p = photos[modalState.photoIndex];
+  const img = $('#m-photo-img');
+  img.src = fileUrl(p.src);
+  img.alt = `${modalState.item.name}: foto del resultado ${modalState.photoIndex + 1} de ${photos.length}`;
+  $('#m-photo-counter').textContent = photos.length > 1 ? `${modalState.photoIndex + 1} / ${photos.length}` : '';
+  $('#m-photo-prev').hidden = $('#m-photo-next').hidden = photos.length < 2;
 }
 
 function renderModalColors() {
@@ -439,7 +488,27 @@ function closeModal(fromHistory = false) {
 function setupModal() {
   const modal = $('#modal');
   modal.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeModal(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+    if (!modal.hidden && modalState?.view === 'photo' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      showModalPhoto(modalState.photoIndex + (e.key === 'ArrowRight' ? 1 : -1));
+    }
+  });
+  $('#m-tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-view]');
+    if (b) setModalView(b.dataset.view);
+  });
+  $('#m-photo-prev').addEventListener('click', () => showModalPhoto(modalState.photoIndex - 1));
+  $('#m-photo-next').addEventListener('click', () => showModalPhoto(modalState.photoIndex + 1));
+  // Deslizar para cambiar de foto en el celular.
+  let x0 = null;
+  $('#m-photo').addEventListener('pointerdown', (e) => { x0 = e.clientX; });
+  $('#m-photo').addEventListener('pointerup', (e) => {
+    if (x0 === null) return;
+    const dx = e.clientX - x0;
+    x0 = null;
+    if (Math.abs(dx) > 50) showModalPhoto(modalState.photoIndex + (dx < 0 ? 1 : -1));
+  });
   window.addEventListener('popstate', () => closeModal(true));
   $('#m-materials').addEventListener('click', (e) => {
     const b = e.target.closest('button');
@@ -755,7 +824,7 @@ async function init() {
 
 // API que usa el panel de administración (js/admin.js).
 Object.assign(app, {
-  render, toast, openModal, closeModal, waLink, esc, fillIcons, observeReveal,
+  render, toast, openModal, closeModal, waLink, esc, fillIcons, observeReveal, fileUrl,
   allColors, itemColors, defaultColor, itemMaterials, colorMode,
 });
 

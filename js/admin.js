@@ -287,7 +287,7 @@ function buildBar() {
 }
 
 function updateStatus(text) {
-  if (!state.bar) return;
+  if (!state.bar || (!text && state.publishing)) return; // mientras se publica se ve el progreso
   const el = state.bar.querySelector('[data-status]');
   el.textContent = text || (state.dirty ? `${state.dirty} cambio${state.dirty > 1 ? 's' : ''} sin publicar` : 'Todo publicado');
   state.bar.classList.toggle('has-changes', state.dirty > 0);
@@ -303,10 +303,12 @@ export function markDirty() {
 
 async function publish() {
   const { app, gh } = state;
+  if (state.publishing) return;
   if (!state.dirty) return app.toast('No hay cambios por publicar.');
   const btn = state.bar.querySelector('[data-act="publish"]');
   btn.disabled = true;
   updateStatus('Publicando…');
+  state.publishing = true;
   const { file, get } = app.admin;
   try {
     const remote = await gh.getText(file);
@@ -314,21 +316,32 @@ async function publish() {
       !confirm('El catálogo se modificó desde otro dispositivo mientras editabas. ¿Publicar tus cambios de todas formas? La otra versión se reemplazará.')) {
       return;
     }
-    const data = get();
+    // Copia de lo que se publica: se puede seguir editando mientras sube y esos cambios quedan pendientes.
+    const data = structuredClone(get());
+    const dirtyAtStart = state.dirty;
     const used = new Set(state.editors.files(data));
-    const files = [...state.pending].filter(([path]) => used.has(path)).map(([path, content]) => ({ path, content }));
+    const existing = await gh.listPaths();
+    const missing = [...used].filter((p) => !state.pending.has(p) && !existing.has(p));
+    if (missing.length && !confirm(`Estos archivos no están en el repositorio ni pendientes de subir:\n\n${missing.join('\n')}\n\nEdita esos elementos y vuelve a subir su archivo (o elimínalos). ¿Publicar de todas formas?`)) {
+      return;
+    }
+    const uploads = [...state.pending].filter(([path]) => used.has(path));
+    const files = uploads.map(([path, content]) => ({ path, content }));
     files.push({ path: file, content: `${JSON.stringify(data, null, 2)}\n` });
     const deletions = [...new Set(state.editors.files(state.published))].filter((p) => !used.has(p));
     await gh.commit(`Actualizar ${app.admin.label || 'catálogo'} desde el panel (${new Date().toLocaleString('es')})`, { files, deletions }, updateStatus);
     state.baseSha = (await gh.getText(file))?.sha || null;
-    state.published = structuredClone(data);
-    state.pending.clear();
-    state.dirty = 0;
-    app.toast('¡Publicado! Los cambios serán visibles para todos en 1–2 minutos.', 'success', 8000);
+    state.published = data;
+    for (const [path] of uploads) state.pending.delete(path);
+    state.dirty = Math.max(0, state.dirty - dirtyAtStart);
+    app.toast(state.dirty
+      ? 'Publicado. Los cambios que hiciste mientras se subía siguen pendientes: vuelve a pulsar Publicar.'
+      : '¡Publicado! Los cambios serán visibles para todos en 1–2 minutos.', 'success', 8000);
   } catch (err) {
     console.error(err);
     app.toast(`No se pudo publicar: ${err.message}`, 'error', 10000);
   } finally {
+    state.publishing = false;
     btn.disabled = false;
     updateStatus();
   }

@@ -2,9 +2,11 @@
 import { state, dialog, esc, slug, uniqueId, markDirty } from './admin.js';
 import { ModalViewer, measureFile, registerLocalFile, webglAvailable, extOf, loadModel, MODEL_EXTS, ORIGINAL } from './scenes.js';
 import { ICONS } from './icons.js';
+import { photoFieldHtml, mountPhotoField, photoFiles } from './admin-photos.js';
 
 const MAX_MODEL_MB = 50;
 const MAX_PARTS = 24; // más piezas que esto no se pueden personalizar una por una
+const MAX_PHOTOS = 6; // fotos del resultado final por modelo
 
 export function install() {
   return {
@@ -16,7 +18,8 @@ export function install() {
     decorateCard,
     afterGrid: addNewCard,
     // Archivos subidos que usa el catálogo (los que dejen de usarse se borran al publicar).
-    files: (site) => site.items.map((i) => i.model).filter((m) => m?.startsWith('models/')),
+    files: (site) => site.items.flatMap((i) => [i.model, ...photoFiles(i.photos)])
+      .filter((p) => p?.startsWith('models/') || p?.startsWith('images/')),
   };
 }
 
@@ -71,6 +74,7 @@ function itemEditor(item = null) {
   const cats = [...new Set(site.items.map((i) => i.category).filter(Boolean))];
   const d = item?.dimensions || {};
   let model = item?.model || '';
+  const photos = (item?.photos || []).map((p) => ({ ...p }));
   let viewer = null;
   const mode0 = item ? app.colorMode(item) : 'single';
 
@@ -95,6 +99,9 @@ function itemEditor(item = null) {
           <label class="btn btn-ghost btn-sm btn-block file-btn">${ICONS.upload}${item ? 'Reemplazar archivo 3D' : 'Elegir archivo 3D'}
             <input type="file" name="file" accept="${MODEL_EXTS.map((e) => `.${e}`).join(',')}" hidden></label>
           <p class="hint" data-file-info>${model && !model.startsWith('procedural:') ? esc(model.split('/').pop()) : model ? 'Modelo de demostración' : `STL, 3MF, OBJ o GLB · máx. ${MAX_MODEL_MB} MB`}</p>
+          <div class="field result-photos"><span class="field-label">Fotos del resultado <small>(opcional)</small></span>
+            ${photoFieldHtml({ max: MAX_PHOTOS, label: 'Añadir fotos del resultado', hint: 'Fotos reales de la pieza ya impresa. Se optimizan solas.' })}
+          </div>
         </div>
         <div class="editor-fields">
           <label class="field"><span class="field-label">Nombre *</span>
@@ -133,6 +140,10 @@ function itemEditor(item = null) {
         </div>
       </div>`,
     onOpen(form) {
+      mountPhotoField(form.querySelector('.result-photos'), photos, {
+        max: MAX_PHOTOS, folder: 'images/modelos', coverLabel: 'Principal',
+        baseName: () => slug(form.elements.name.value) || 'modelo',
+      });
       const canvas = form.querySelector('.editor-stage canvas');
       const empty = form.querySelector('.editor-empty');
       const info = form.querySelector('[data-file-info]');
@@ -273,6 +284,7 @@ function itemEditor(item = null) {
         ...(colorMode === 'parts' && { parts }),
         featured: f.featured.checked,
         model,
+        ...(photos.length && { photos }),
       };
       if (item) {
         if (item.model !== model) state.pending.delete(item.model);
